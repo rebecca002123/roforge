@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'">
+  <title>RoForge</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="titlebar">
+    <div class="tb-drag">
+      <span class="brand">Ro<span class="brand-accent">Forge</span></span>
+      <span class="chip" id="studioChip" title="Roblox Studio plugin connection">
+        <span class="dot"></span><span id="studioLabel">Studio offline</span>
+      </span>
+    </div>
+    <div class="tb-buttons">
+      <button class="icon" id="btnChats" title="Chats">☰</button>
+      <button class="icon" id="btnSettings" title="Settings">⚙</button>
+      <button class="icon" id="btnPin" title="Keep on top">📌</button>
+      <button class="icon" id="btnMin" title="Minimise">—</button>
+      <button class="icon danger" id="btnClose" title="Close">✕</button>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="drawer" id="drawer" hidden>
+      <div class="drawer-head">
+        <span>Chats</span>
+        <button class="pill" id="btnNewChat">+ New</button>
+      </div>
+      <div class="chatlist" id="chatList"></div>
+    </aside>
+
+    <main class="chat" id="chat">
+      <div class="messages" id="messages"></div>
+    </main>
+  </div>
+
+  <footer class="composer">
+    <textarea id="input" rows="1" placeholder="Ask about your Roblox game — Luau, remotes, DataStores, a bug you're stuck on…"></textarea>
+    <div class="composer-actions">
+      <button class="mode" id="btnBuild" title="Let RoForge build directly in your open place">
+        <span class="mode-dot"></span>Build in Studio
+      </button>
+      <span class="hint" id="hint">Enter to send · Shift+Enter for a new line</span>
+      <button class="send" id="btnSend">Send</button>
+      <button class="send stop" id="btnStop" hidden>Stop</button>
+    </div>
+  </footer>
+
+  <div class="modal" id="settingsModal" hidden>
+    <div class="sheet">
+      <h2>Settings</h2>
+
+      <label class="field">
+        <span>Runs on</span>
+        <select id="engine">
+          <option value="claude-code">Your Claude subscription (via Claude Code)</option>
+          <option value="api">Anthropic API key (pay-as-you-go credits)</option>
+        </select>
+        <small id="engineHelp"></small>
+      </label>
+
+      <label class="field" id="apiKeyField">
+        <span>Anthropic API key</span>
+        <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
+        <small id="keyState">Checking…</small>
+      </label>
+
+      <label class="field">
+        <span>Effort</span>
+        <select id="effort">
+          <option value="low">Low — quick answers</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="xhigh">Extra high — best for building (default)</option>
+          <option value="max">Max — slowest, hardest problems</option>
+        </select>
+      </label>
+
+      <label class="check">
+        <input type="checkbox" id="showThinking">
+        <span>Show Claude's reasoning while it works</span>
+      </label>
+
+      <div class="field">
+        <span>Roblox Studio plugin</span>
+        <small>Installs the plugin into Studio for you. Restart Studio
+          afterwards, then click <b>RoForge</b> on the Plugins tab. It talks to
+          this app on <code>127.0.0.1:<span id="portLabel">8095</span></code>.</small>
+        <button class="pill wide" id="btnInstallPlugin">Install plugin into Roblox Studio</button>
+        <button class="pill wide subtle" id="btnOpenPluginsFolder">Open the Plugins folder</button>
+        <small id="pluginState"></small>
+      </div>
+
+      <div class="sheet-actions">
+        <button class="pill" id="btnSaveSettings">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="markdown.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

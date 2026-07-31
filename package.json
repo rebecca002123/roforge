@@ -1,0 +1,53 @@
+{
+  "name": "roforge",
+  "version": "1.4.1",
+  "description": "A liquid-glass Roblox coding companion for Windows: chat with Claude about Luau and push scripts straight into Roblox Studio",
+  "main": "main.js",
+  "type": "commonjs",
+  "author": "RoForge",
+  "license": "ISC",
+  "scripts": {
+    "start": "electron .",
+    "icon": "node build-icon.js",
+    "dist": "node build-icon.js && electron-builder --win"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0"
+  },
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.roforge.desktop",
+    "productName": "RoForge",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "asarUnpack": ["mcp/**/*"],
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "renderer/**/*",
+      "plugin/**/*",
+      "mcp/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "artifactName": "RoForge-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "RoForge",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

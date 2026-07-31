@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RoForge — a Roblox coding companion for Windows</title>
+<meta name="description" content="RoForge is a Windows app that sits beside Roblox Studio: chat with Claude about Luau and push scripts straight into your open place.">
+<meta property="og:title" content="RoForge">
+<meta property="og:description" content="Chat with Claude about Luau, and push the scripts straight into Roblox Studio.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23141824'/><g transform='rotate(-18 32 32)'><rect x='16' y='16' width='32' height='32' rx='4' fill='%23ff5b52'/><rect x='26' y='26' width='12' height='12' rx='1.5' fill='%23141824'/></g></svg>">
+
+<style>
+  /* Same palette as the app itself — dark glass, forge red. */
+  :root {
+    --bg: #0a0c12;
+    --bg-2: #0e1119;
+    --panel: rgba(255, 255, 255, 0.045);
+    --panel-strong: rgba(255, 255, 255, 0.075);
+    --line: rgba(255, 255, 255, 0.09);
+    --text: #e8ebf2;
+    --muted: #8d93a4;
+    --accent: #ff5b52;
+    --accent-soft: rgba(255, 91, 82, 0.16);
+    --ok: #4ade80;
+    --warn: #f5b342;
+    --code-bg: rgba(4, 6, 11, 0.66);
+    --radius: 14px;
+    --max: 940px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Two soft lights behind everything, so the glass panels have something to
+     sit on rather than floating on flat black. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -20vh -10vw auto;
+    height: 90vh;
+    background:
+      radial-gradient(45vw 45vh at 22% 12%, rgba(255, 91, 82, 0.17), transparent 70%),
+      radial-gradient(40vw 40vh at 78% 0%, rgba(90, 120, 255, 0.13), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  main, header, footer { position: relative; z-index: 1; }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 22px; }
+
+  /* --- top bar ---------------------------------------------------------- */
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    background: rgba(10, 12, 18, 0.72);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar .wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 58px;
+  }
+  .mark { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: 0.2px; }
+  .mark svg { display: block; }
+  .mark .lo { color: var(--accent); }
+  .topbar nav { margin-left: auto; display: flex; gap: 20px; font-size: 14.5px; }
+  .topbar nav a { color: var(--muted); }
+  .topbar nav a:hover { color: var(--text); text-decoration: none; }
+  @media (max-width: 620px) { .topbar nav a.hide-sm { display: none; } }
+
+  /* --- hero ------------------------------------------------------------- */
+
+  .hero { padding: 76px 0 54px; }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(255, 91, 82, 0.28);
+    color: #ffb3ae;
+    font-size: 13px;
+    letter-spacing: 0.2px;
+  }
+  h1 {
+    margin: 20px 0 0;
+    font-size: clamp(38px, 6.6vw, 62px);
+    line-height: 1.06;
+    letter-spacing: -1.4px;
+    font-weight: 700;
+  }
+  h1 .grad {
+    background: linear-gradient(96deg, #ff9a4d, var(--accent) 55%, #ff7d76);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .lede {
+    margin: 20px 0 0;
+    max-width: 60ch;
+    font-size: 19px;
+    color: #c3c8d6;
+  }
+
+  .cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 34px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 22px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .btn-primary {
+    background: linear-gradient(180deg, #ff6a5f, #ec4136);
+    color: #fff;
+    box-shadow: 0 10px 30px -12px rgba(255, 91, 82, 0.85);
+  }
+  .btn-primary:hover { text-decoration: none; filter: brightness(1.07); }
+  .btn-primary[aria-disabled="true"] {
+    background: var(--panel-strong);
+    color: var(--muted);
+    border-color: var(--line);
+    box-shadow: none;
+    cursor: default;
+    filter: none;
+  }
+  .btn-ghost {
+    background: var(--panel);
+    border-color: var(--line);
+    color: var(--text);
+  }
+  .btn-ghost:hover { background: var(--panel-strong); text-decoration: none; }
+  .cta-note { font-size: 13.5px; color: var(--muted); }
+
+  /* --- panels ----------------------------------------------------------- */
+
+  section { padding: 46px 0; }
+  h2 {
+    margin: 0 0 8px;
+    font-size: 27px;
+    letter-spacing: -0.5px;
+    font-weight: 650;
+  }
+  .sub { margin: 0 0 26px; color: var(--muted); max-width: 62ch; }
+  h3 { margin: 0 0 6px; font-size: 17px; font-weight: 620; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+  .grid p { margin: 0; color: var(--muted); font-size: 15px; }
+  .ico { font-size: 20px; line-height: 1; margin-bottom: 10px; display: block; }
+
+  /* --- requirements ----------------------------------------------------- */
+
+  .req { display: grid; gap: 12px; }
+  .req .row {
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: 12px;
+    align-items: start;
+  }
+  .req .tick { color: var(--ok); font-weight: 700; }
+  .req p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+
+  .split { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .split .panel { position: relative; }
+  .tag {
+    position: absolute;
+    top: -9px;
+    left: 18px;
+    font-size: 11.5px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #171b25;
+    border: 1px solid var(--line);
+    color: var(--muted);
+  }
+  .tag.rec { color: #ffb3ae; border-color: rgba(255, 91, 82, 0.35); }
+
+  /* --- steps ------------------------------------------------------------ */
+
+  ol.steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: grid; gap: 14px; }
+  ol.steps > li {
+    counter-increment: step;
+    position: relative;
+    padding: 18px 22px 18px 62px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  ol.steps > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 18px;
+    top: 18px;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(255, 91, 82, 0.3);
+    color: #ffb3ae;
+    font-size: 14px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  ol.steps p { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
+  ol.steps p + p { margin-top: 10px; }
+
+  code, kbd, pre {
+    font-family: "Cascadia Code", ui-monospace, "SF Mono", Consolas, monospace;
+  }
+  code {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 0.875em;
+    color: #ffc4c0;
+    overflow-wrap: anywhere;
+  }
+  kbd {
+    background: var(--panel-strong);
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    padding: 1px 7px;
+    font-size: 0.84em;
+    color: var(--text);
+  }
+  pre {
+    margin: 12px 0 0;
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #d7dbe6;
+  }
+  pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; }
+
+  .callout {
+    margin-top: 12px;
+    border-left: 3px solid var(--warn);
+    background: rgba(245, 179, 66, 0.07);
+    border-radius: 0 10px 10px 0;
+    padding: 12px 16px;
+    font-size: 14.5px;
+    color: #d9d3c4;
+  }
+  .callout strong { color: var(--warn); }
+
+  /* --- troubleshooting -------------------------------------------------- */
+
+  details.faq {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    padding: 0 20px;
+    margin-bottom: 10px;
+  }
+  details.faq > summary {
+    cursor: pointer;
+    padding: 15px 0;
+    font-weight: 560;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  details.faq > summary::-webkit-details-marker { display: none; }
+  details.faq > summary::before {
+    content: "+";
+    color: var(--accent);
+    font-family: ui-monospace, monospace;
+    font-size: 18px;
+    width: 14px;
+  }
+  details.faq[open] > summary::before { content: "−"; }
+  details.faq > *:not(summary) { margin: 0 0 16px 26px; color: var(--muted); font-size: 15px; }
+
+  /* --- chips row -------------------------------------------------------- */
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  .dot.warn { background: var(--warn); }
+  .dot.off { background: #5b6072; }
+
+  /* --- footer ----------------------------------------------------------- */
+
+  footer {
+    border-top: 1px solid var(--line);
+    margin-top: 40px;
+    padding: 30px 0 60px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  footer p { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <span class="mark">
+      <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true">
+        <rect width="64" height="64" rx="15" fill="#141824"/>
+        <g transform="rotate(-18 32 32)">
+          <rect x="16" y="16" width="32" height="32" rx="4.5" fill="url(#g)"/>
+          <rect x="26.5" y="26.5" width="11" height="11" rx="1.8" fill="#141824"/>
+        </g>
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ff9a4d"/>
+            <stop offset="1" stop-color="#ff5b52"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      Ro<span class="lo">Forge</span>
+    </span>
+    <nav>
+      <a href="#install">Install</a>
+      <a href="#studio">Connect Studio</a>
+      <a href="#trouble" class="hide-sm">Troubleshooting</a>
+      <a href="#source" class="hide-sm">Source</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <div class="wrap hero">
+    <span class="eyebrow">Windows desktop app · v1.4.1</span>
+    <h1>Talk about your game.<br><span class="grad">Watch it get built.</span></h1>
+    <p class="lede">
+      RoForge is a chat window that only ever thinks about Roblox — and it can drop
+      the scripts it writes straight into your open place in Studio. Ask for a coin
+      system and it writes one, places it in <code>ServerScriptService</code>, and you
+      press play.
+    </p>
+
+    <div class="cta">
+      <a class="btn btn-primary" id="dl" href="#install">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 20h16"/>
+        </svg>
+        <span id="dl-label">Download for Windows</span>
+      </a>
+      <a class="btn btn-ghost" href="#install">How it works</a>
+      <span class="cta-note" id="dl-note">Windows 10 / 11 · 64-bit · ~100&nbsp;MB installer · free</span>
+    </div>
+
+    <div class="chips">
+      <span class="chip"><span class="dot"></span> Runs on your Claude subscription — no API bill</span>
+      <span class="chip"><span class="dot off"></span> Everything stays on your PC</span>
+      <span class="chip"><span class="dot off"></span> No admin rights needed</span>
+    </div>
+  </div>
+
+  <section class="wrap">
+    <h2>What it actually does</h2>
+    <p class="sub">Four things a general chatbot in a browser tab can't.</p>
+    <div class="grid">
+      <div class="panel">
+        <span class="ico">🎯</span>
+        <h3>Knows your place</h3>
+        <p>Once the Studio plugin is connected, it sees your place name, your Explorer
+           selection and which scripts already exist — so it targets real containers
+           instead of inventing them.</p>
+      </div>
+      <div class="panel">
+        <span class="ico">⚡</span>
+        <h3>Send to Studio</h3>
+        <p>Every complete script is tagged with where it belongs. One click inserts it —
+           updating an existing script of the same name rather than making a duplicate,
+           and always as a single <kbd>Ctrl</kbd>+<kbd>Z</kbd>.</p>
+      </div>
+      <div class="panel">
+        <span class="ico">🏗️</span>
+        <h3>Build mode</h3>
+        <p>Flip one toggle and it builds inside your open place itself: creates parts,
+           folders, GUIs and scripts, reads the place back to check its work, and shows
+           every action live as it happens.</p>
+      </div>
+      <div class="panel">
+        <span class="ico">📚</span>
+        <h3>A Luau specialist</h3>
+        <p>Modern Luau, the client/server boundary, remotes with validated arguments,
+           DataStores, replication. It writes whole files, never fragments — a half
+           script is a broken script.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>What you need first</h2>
+    <p class="sub">Two of these you almost certainly already have. The third is the one to read carefully.</p>
+    <div class="panel req">
+      <div class="row"><span class="tick">✓</span><div>
+        <strong>Windows 10 or 11, 64-bit.</strong>
+        <p>RoForge installs per-user, so it never asks for admin rights. No macOS or Linux build.</p>
+      </div></div>
+      <div class="row"><span class="tick">✓</span><div>
+        <strong>Roblox Studio.</strong>
+        <p>Optional, strictly speaking — you can use RoForge as a Roblox-flavoured chat window on its own — but the whole point is the connection.</p>
+      </div></div>
+      <div class="row"><span class="tick">✓</span><div>
+        <strong>A way to pay for the model.</strong>
+        <p>RoForge doesn't come with an account; it uses yours. Pick one of the two below.</p>
+      </div></div>
+    </div>
+
+    <div class="split" style="margin-top: 26px">
+      <div class="panel">
+        <span class="tag rec">Recommended</span>
+        <h3>Your Claude subscription</h3>
+        <p style="color: var(--muted); font-size: 15px; margin: 6px 0 0">
+          RoForge drives the Claude Code CLI already on your PC, so there are no
+          per-token charges — it's covered by Claude Pro or Max. Install the CLI once:
+        </p>
+        <pre><code>npm install -g @anthropic-ai/claude-code
+claude   # sign in with your Claude account</code></pre>
+        <p style="color: var(--muted); font-size: 15px; margin: 10px 0 0">
+          Needs <a href="https://nodejs.org/" target="_blank" rel="noopener">Node.js</a>
+          installed. This is the default setting — nothing to configure in RoForge.
+        </p>
+      </div>
+      <div class="panel">
+        <span class="tag">Alternative</span>
+        <h3>An Anthropic API key</h3>
+        <p style="color: var(--muted); font-size: 15px; margin: 6px 0 0">
+          Paste a key from
+          <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a>
+          into Settings instead. Billed as pay-as-you-go credits.
+        </p>
+        <div class="callout">
+          <strong>Note:</strong> a Claude Pro/Max subscription does <em>not</em> fund API
+          keys — it's a separate balance you top up. If you see “credit balance is too
+          low”, that's this, and switching model won't help.
+        </div>
+        <p style="color: var(--muted); font-size: 15px; margin: 12px 0 0">
+          Your key is encrypted with Windows DPAPI and never leaves the machine except
+          in requests to Anthropic.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="install">
+    <h2>Install it</h2>
+    <p class="sub">About two minutes, most of it Studio restarting.</p>
+    <ol class="steps">
+      <li>
+        <strong>Download and run the installer.</strong>
+        <p>It's a one-click per-user install: RoForge lands in
+           <code>%LOCALAPPDATA%\Programs\RoForge</code> with a desktop and Start Menu
+           shortcut, plus an entry in Add or Remove Programs. It launches itself when
+           it's done.</p>
+        <div class="callout">
+          <strong>Windows will warn you.</strong> The installer isn't code-signed —
+          signing certificates cost hundreds a year — so SmartScreen shows
+          “Windows protected your PC”. Click <strong>More info → Run anyway</strong>.
+          If you'd rather not trust a stranger's binary, the
+          <a href="#source">full source is public</a> and you can build it yourself.
+        </div>
+      </li>
+      <li>
+        <strong>Pick what it runs on.</strong>
+        <p>Open Settings (the gear in the title bar). <strong>Runs on</strong> is set to
+           <em>Your Claude subscription</em> by default — if you installed the Claude Code
+           CLI above, there's nothing to do here. Otherwise switch to
+           <em>Anthropic API key</em> and paste your key; RoForge verifies it on the spot.</p>
+      </li>
+      <li>
+        <strong>Say hello.</strong>
+        <p>Type a question and you're working. Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd>
+           anywhere in Windows to show or hide the window — it opens down the right-hand
+           side of the screen, sized to sit beside Studio rather than on top of it.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="wrap" id="studio">
+    <h2>Connect Roblox Studio</h2>
+    <p class="sub">This is what turns it from a chat window into something that can build.</p>
+    <ol class="steps">
+      <li>
+        <strong>Settings → Install plugin into Roblox Studio.</strong>
+        <p>That copies the plugin into <code>%LOCALAPPDATA%\Roblox\Plugins</code> for you.
+           Nothing to download separately, nothing to drag anywhere.</p>
+      </li>
+      <li>
+        <strong>Restart Studio, then click the RoForge button on the Plugins tab.</strong>
+        <p>Studio only picks up new plugins on start-up. Once you click the button the
+           chip in RoForge's title bar turns green and shows your place name.</p>
+      </li>
+      <li>
+        <strong>Allow script injection when Studio asks.</strong>
+        <p>This is required — without it the plugin can create a script but can't write
+           anything into it. If the plugin reports it can't reach the app, also enable
+           <em>Allow HTTP Requests</em> under Game Settings → Security.</p>
+      </li>
+      <li>
+        <strong>Ask for something and press Send to Studio.</strong>
+        <p>Or flip the <strong>Build in Studio</strong> toggle next to the composer and
+           just describe the game — it'll create the parts, folders and scripts itself,
+           in dependency order, and tell you what it made when it's done.</p>
+        <p>Every insert and every build action is a single <kbd>Ctrl</kbd>+<kbd>Z</kbd> in
+           Studio. Nothing is unrecoverable.</p>
+      </li>
+    </ol>
+
+    <div class="panel" style="margin-top: 18px">
+      <h3>How the connection works</h3>
+      <p style="color: var(--muted); font-size: 15px; margin: 6px 0 0">
+        Nothing can dial into Studio from outside, so the plugin polls instead: every
+        3 seconds it posts a small snapshot of your place to <code>127.0.0.1:8095</code>
+        and collects any pending work. That server is bound to loopback only — it
+        accepts instructions to write scripts into your game, so it has no business
+        being reachable from the network. Nothing about your place is sent anywhere
+        except to Anthropic as part of the conversation you're having.
+      </p>
+      <div class="chips">
+        <span class="chip"><span class="dot"></span> Connected · shows your place name</span>
+        <span class="chip"><span class="dot warn"></span> Studio open · not linked — click the plugin button</span>
+        <span class="chip"><span class="dot off"></span> Studio closed</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="trouble">
+    <h2>When something's off</h2>
+    <p class="sub">The handful of things that actually go wrong.</p>
+
+    <details class="faq">
+      <summary>Windows says “Windows protected your PC” and won't run the installer</summary>
+      <p>Expected — the build isn't code-signed. Click <strong>More info</strong>, then
+         <strong>Run anyway</strong>. If your antivirus quarantines it instead, that's the
+         same unsigned-binary heuristic; you may need to allow it explicitly, or build
+         from source.</p>
+    </details>
+
+    <details class="faq">
+      <summary>The chip says “Studio open · not linked”</summary>
+      <p>Studio is running but the plugin hasn't checked in. Click the
+         <strong>RoForge</strong> button on the Plugins tab. If it isn't there, run
+         Settings → Install plugin into Roblox Studio again and restart Studio —
+         Studio only loads plugins at start-up.</p>
+    </details>
+
+    <details class="faq">
+      <summary>It says the plugin is out of date</summary>
+      <p>The app and plugin check each other's protocol version, and RoForge would rather
+         tell you than half-build against an old plugin. Re-run the install button in
+         Settings, then restart Studio. Studio sometimes takes a minute or two to notice
+         a plugin file changed, which is why a restart is the reliable fix.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Build mode refuses to start</summary>
+      <p>It needs Studio connected <em>and</em> on a current plugin. Check the chip is
+         green first. Ordinary chat works regardless — turn the toggle off and insert
+         code yourself with Send to Studio.</p>
+    </details>
+
+    <details class="faq">
+      <summary>“Your credit balance is too low”</summary>
+      <p>You're on the API-key engine with an empty balance. Either top up at
+         console.anthropic.com, or switch <strong>Runs on</strong> to
+         <em>Your Claude subscription</em> in Settings. Choosing a cheaper model does not
+         avoid API billing — any model on an API key is billed.</p>
+    </details>
+
+    <details class="faq">
+      <summary>A script went somewhere I didn't expect</summary>
+      <p>It won't invent containers — only real ones (<code>ServerScriptService</code>,
+         <code>ReplicatedStorage</code>, <code>StarterPlayer</code>, …) are accepted, and
+         missing folders in between get created. Select something in the Explorer and ask
+         for it “in my selection” to pin it exactly. And <kbd>Ctrl</kbd>+<kbd>Z</kbd>
+         undoes any insert in one press.</p>
+    </details>
+
+    <details class="faq">
+      <summary>Where's my chat history and API key stored?</summary>
+      <p><code>%APPDATA%\RoForge</code>. It survives reinstalls and upgrades, and the key
+         is encrypted with Windows DPAPI so it's only readable by your Windows account.
+         Uninstalling leaves the folder alone — delete it by hand if you want it gone.</p>
+    </details>
+  </section>
+
+  <section class="wrap" id="source">
+    <h2>Build it yourself</h2>
+    <p class="sub">
+      Everything is in the repo — the Electron app, the Luau plugin, and the system
+      prompt that makes it a Roblox engineer rather than a chatbot.
+    </p>
+    <div class="panel">
+      <pre><code>git clone https://github.com/rebecca002123/roforge.git
+cd roforge
+npm install
+npm start          # run it straight from source
+npm run dist       # or build dist/RoForge-Setup-&lt;version&gt;.exe</code></pre>
+      <div class="callout">
+        <strong>One known build snag on Windows:</strong> electron-builder's signing
+        bundle contains macOS symlinks that Windows refuses to create, and the build
+        dies while unpacking it. Since nothing here is code-signed, seed that cache
+        without the macOS half once and it builds from then on:
+        <pre><code>cd %LOCALAPPDATA%\electron-builder\Cache\winCodeSign
+7za x -snld -y &lt;any&gt;.7z -owinCodeSign-2.6.0 -xr!darwin</code></pre>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>
+      RoForge is an independent project. It is not affiliated with, endorsed by, or
+      connected to Roblox Corporation or Anthropic.
+    </p>
+    <p>
+      Roblox is a trademark of Roblox Corporation. Claude is a trademark of Anthropic.
+    </p>
+  </div>
+</footer>
+
+<script>
+  /* ------------------------------------------------------------------ *
+   *  EDIT THIS ONE LINE when the installer is uploaded.                 *
+   *  e.g. "https://github.com/rebecca002123/roforge/releases/download/  *
+   *        v1.4.1/RoForge-Setup-1.4.1.exe"                              *
+   *  Until it's a real URL the button stays visibly disabled rather     *
+   *  than sending people to a 404.                                      *
+   * ------------------------------------------------------------------ */
+  const DOWNLOAD_URL = "";
+
+  const btn = document.getElementById("dl");
+  if (DOWNLOAD_URL) {
+    btn.href = DOWNLOAD_URL;
+  } else {
+    btn.setAttribute("aria-disabled", "true");
+    btn.removeAttribute("href");
+    document.getElementById("dl-label").textContent = "Download coming soon";
+    document.getElementById("dl-note").textContent =
+      "The installer isn't published yet — build from source in the meantime.";
+  }
+</script>
+
+</body>
+</html>
