@@ -69,7 +69,7 @@ function headers(apiKey) {
   const h = { 'content-type': 'application/json' };
   if (apiKey) h.authorization = `Bearer ${apiKey}`;
   // OpenRouter attributes requests by these; harmless everywhere else.
-  h['http-referer'] = 'https://github.com/rebecca002123/roforge';
+  h['http-referer'] = 'https://roforgeapp.github.io';
   h['x-title'] = 'RoForge';
   return h;
 }

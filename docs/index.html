@@ -374,7 +374,6 @@
       <a href="#install">Install</a>
       <a href="#studio">Connect Studio</a>
       <a href="#trouble" class="hide-sm">Troubleshooting</a>
-      <a href="#source" class="hide-sm">Source</a>
     </nav>
   </div>
 </header>
@@ -539,7 +538,8 @@ claude   # sign in with your Claude account</code></pre>
           signing certificates cost hundreds a year — so SmartScreen shows
           “Windows protected your PC”. Click <strong>More info → Run anyway</strong>.
           If you'd rather not trust a stranger's binary, the
-          <a href="#source">full source is public</a> and you can build it yourself.
+          <a href="https://github.com/rebecca002123/roforge" target="_blank" rel="noopener">full
+          source is public</a> — every line of it is there to read.
         </div>
       </li>
       <li>
@@ -617,8 +617,7 @@ claude   # sign in with your Claude account</code></pre>
       <summary>Windows says “Windows protected your PC” and won't run the installer</summary>
       <p>Expected — the build isn't code-signed. Click <strong>More info</strong>, then
          <strong>Run anyway</strong>. If your antivirus quarantines it instead, that's the
-         same unsigned-binary heuristic; you may need to allow it explicitly, or build
-         from source.</p>
+         same unsigned-binary heuristic; you may need to allow it explicitly.</p>
     </details>
 
     <details class="faq">
@@ -694,29 +693,6 @@ claude   # sign in with your Claude account</code></pre>
     </details>
   </section>
 
-  <section class="wrap" id="source">
-    <h2>Build it yourself</h2>
-    <p class="sub">
-      Everything is in the repo — the Electron app, the Luau plugin, and the system
-      prompt that makes it a Roblox engineer rather than a chatbot.
-    </p>
-    <div class="panel">
-      <pre><code>git clone https://github.com/rebecca002123/roforge.git
-cd roforge
-npm install
-npm start          # run it straight from source
-npm run dist       # or build dist/RoForge-Setup-&lt;version&gt;.exe</code></pre>
-      <div class="callout">
-        <strong>One known build snag on Windows:</strong> electron-builder's signing
-        bundle contains macOS symlinks that Windows refuses to create, and the build
-        dies while unpacking it. Since nothing here is code-signed, seed that cache
-        without the macOS half once and it builds from then on:
-        <pre><code>cd %LOCALAPPDATA%\electron-builder\Cache\winCodeSign
-7za x -snld -y &lt;any&gt;.7z -owinCodeSign-2.6.0 -xr!darwin</code></pre>
-      </div>
-    </div>
-  </section>
-
 </main>
 
 <footer>
@@ -737,6 +713,9 @@ npm run dist       # or build dist/RoForge-Setup-&lt;version&gt;.exe</code></pre
    *  and the release notes. If it's ever left empty the button renders  *
    *  disabled rather than sending people to a 404.                      *
    * ------------------------------------------------------------------ */
+  // TEMPORARY: points at the personal repo until the roforgeapp org exists,
+  // so the button works rather than 404s. Flip both this and the source link
+  // above the moment the repo is transferred.
   const DOWNLOAD_URL =
     "https://github.com/rebecca002123/roforge/releases/download/v1.5.0/RoForge-Setup-1.5.0.exe";
 
@@ -748,7 +727,7 @@ npm run dist       # or build dist/RoForge-Setup-&lt;version&gt;.exe</code></pre
     btn.removeAttribute("href");
     document.getElementById("dl-label").textContent = "Download coming soon";
     document.getElementById("dl-note").textContent =
-      "The installer isn't published yet — build from source in the meantime.";
+      "The installer for this version isn't published yet — check back shortly.";
   }
 </script>
 
