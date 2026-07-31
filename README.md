@@ -9,7 +9,7 @@ desktop shortcut. No terminal involved.
 
 ## What it runs on
 
-Two options, in Settings under **Runs on**:
+Three options, in Settings under **Runs on**:
 
 - **Your Claude subscription** (default) — RoForge drives the Claude Code CLI
   already installed on this PC, so there are no per-token API charges. The
@@ -19,8 +19,20 @@ Two options, in Settings under **Runs on**:
   pay-as-you-go credits. A Claude Pro/Max subscription does *not* fund this;
   it's a separate balance at console.anthropic.com. The key is encrypted with
   Windows DPAPI and never leaves the machine except in requests to Anthropic.
+- **Any other model** — anything speaking the OpenAI chat-completions API
+  (`src/openai.js`), which is what makes RoForge usable with no Anthropic
+  account at all. Presets for **Ollama** (models on your own PC: free, offline,
+  no key), **OpenRouter**, **Groq** and **Google Gemini** (all with free
+  tiers), plus a custom address for LM Studio, llama.cpp, vLLM or a company
+  gateway. Settings asks the endpoint which models it has rather than making
+  you type an id.
 
-The `effort` setting only applies on the API path; Claude Code manages its own.
+The `effort` setting only applies on the API path; Claude Code manages its own,
+and OpenAI-compatible servers have no equivalent.
+
+Build mode leans on the model handling multi-step tool use. Claude and the
+larger hosted models manage it; a small local model will usually write a script
+or two and then lose the thread. Ordinary chat is fine on anything.
 
 ## Installing / rebuilding
 
@@ -129,6 +141,8 @@ main.js              window, IPC, app lifecycle
 preload.js           the renderer's only door to the main process
 src/prompt.js        the Roblox system prompt — the actual product
 src/claude.js        streaming Anthropic calls, abort, key verification
+src/claudecode.js    the same, driven through the local Claude Code CLI
+src/openai.js        any OpenAI-compatible server (Ollama, OpenRouter, …)
 src/bridge.js        localhost server the Studio plugin polls
 src/store.js         conversations + encrypted key on disk
 renderer/            chat UI, markdown + Luau highlighting

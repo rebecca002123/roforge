@@ -15,6 +15,7 @@ const claude = require('./src/claude');
 const bridge = require('./src/bridge');
 const studioDetect = require('./src/studio-detect');
 const claudecode = require('./src/claudecode');
+const compat = require('./src/openai');
 
 let win = null;
 
@@ -150,6 +151,28 @@ ipcMain.handle('settings:set-key', async (_e, key) => {
   return check;
 });
 
+// --- OpenAI-compatible engine -------------------------------------------
+
+ipcMain.handle('compat:providers', () => compat.PROVIDERS);
+
+/** Saved without verifying: several of these providers have no cheap probe,
+ *  and the model list / test button below is the honest check. */
+ipcMain.handle('settings:set-alt-key', (_e, key) => {
+  store.setAltKey((key || '').trim() || null);
+  return { ok: true };
+});
+
+ipcMain.handle('compat:models', (_e, { baseUrl, key }) => compat.listModels({
+  baseUrl,
+  apiKey: (key || '').trim() || store.getAltKey(),
+}));
+
+ipcMain.handle('compat:test', (_e, { baseUrl, key, model }) => compat.verify({
+  baseUrl,
+  apiKey: (key || '').trim() || store.getAltKey(),
+  model,
+}));
+
 // --- conversations -------------------------------------------------------
 
 ipcMain.handle('chat:list', () => store.listConversations());
@@ -162,11 +185,20 @@ let activeConversation = null;
 
 ipcMain.handle('chat:send', async (event, { conversationId, text, buildMode }) => {
   const settings = store.settings();
-  const useClaudeCode = settings.engine === 'claude-code';
+  const engine = settings.engine;
   const apiKey = store.getApiKey();
-  if (!useClaudeCode && !apiKey) return { ok: false, error: 'no-key' };
-  if (useClaudeCode && !claudecode.isInstalled()) {
-    return { ok: false, error: 'Claude Code is not installed on this machine. Install it, or switch back to the API in settings.' };
+
+  if (engine === 'claude-code' && !claudecode.isInstalled()) {
+    return { ok: false, error: 'Claude Code is not installed on this machine. Install it, or pick a different engine in settings.' };
+  }
+  if (engine === 'api' && !apiKey) return { ok: false, error: 'no-key' };
+  if (engine === 'openai') {
+    if (!settings.altBaseUrl) return { ok: false, error: 'no-key' };
+    if (!settings.altModel) {
+      return { ok: false, error: 'No model chosen yet — pick one in Settings under “Runs on”.' };
+    }
+    const preset = compat.PROVIDERS[settings.provider];
+    if (preset && !preset.keyless && !store.getAltKey()) return { ok: false, error: 'no-key' };
   }
 
   const studio = bridge.status();
@@ -192,7 +224,17 @@ ipcMain.handle('chat:send', async (event, { conversationId, text, buildMode }) =
   activeConversation = conversationId;
   try {
     let result;
-    if (useClaudeCode) {
+    if (engine === 'openai') {
+      result = await (buildMode ? compat.build : compat.send)({
+        baseUrl: s.altBaseUrl,
+        apiKey: store.getAltKey(),
+        model: s.altModel,
+        messages: convo.messages,
+        studioContext: bridge.contextBlock(),
+        showThinking: s.showThinking,
+        onEvent,
+      });
+    } else if (engine === 'claude-code') {
       // Claude Code keeps its own conversation state, so it gets this turn's
       // text and a session id — not our stored history.
       result = await claudecode.send({
@@ -235,11 +277,15 @@ ipcMain.handle('chat:send', async (event, { conversationId, text, buildMode }) =
   }
 });
 
-ipcMain.handle('chat:stop', () => claude.abort() || claudecode.abort());
+ipcMain.handle('chat:stop', () => claude.abort() || claudecode.abort() || compat.abort());
 
 
 function friendlyError(err) {
   if (!err) return 'Unknown error.';
+
+  // The OpenAI-compatible engine already words its own failures — an
+  // unreachable Ollama needs "start Ollama", not "check your API key".
+  if (err.offline) return err.message;
 
   // The SDK's .message on a 4xx is the raw JSON body. Dig out the human part
   // so the user gets a sentence rather than a wall of braces.

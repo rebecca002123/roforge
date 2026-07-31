@@ -461,6 +461,19 @@ body {
 }
 .field input:focus, .field select:focus { border-color: rgba(255, 91, 82, 0.45); }
 
+/* Second-level labels inside a field that holds several inputs (the
+   OpenAI-compatible engine needs provider + address + key + model together). */
+.field > span.sub-label {
+  margin-top: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11.5px;
+}
+
+.row-gap { display: flex; gap: 8px; align-items: center; }
+.row-gap select { flex: 1; min-width: 0; }
+.row-gap .pill { flex: 0 0 auto; }
+
 .check { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; font-size: 13px; }
 .check input { accent-color: var(--accent); }
 

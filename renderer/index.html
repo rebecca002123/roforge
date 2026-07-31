@@ -59,6 +59,7 @@
         <select id="engine">
           <option value="claude-code">Your Claude subscription (via Claude Code)</option>
           <option value="api">Anthropic API key (pay-as-you-go credits)</option>
+          <option value="openai">Any other model — free, local or paid</option>
         </select>
         <small id="engineHelp"></small>
       </label>
@@ -68,6 +69,26 @@
         <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
         <small id="keyState">Checking…</small>
       </label>
+
+      <div class="field" id="compatFields" hidden>
+        <span>Provider</span>
+        <select id="provider"></select>
+        <small id="providerHelp"></small>
+
+        <span class="sub-label">Server address</span>
+        <input type="text" id="altBaseUrl" placeholder="http://127.0.0.1:11434/v1" autocomplete="off" spellcheck="false">
+
+        <span class="sub-label" id="altKeyLabel">API key</span>
+        <input type="password" id="altKey" placeholder="sk-…" autocomplete="off">
+
+        <span class="sub-label">Model</span>
+        <div class="row-gap">
+          <select id="altModel"><option value="">—</option></select>
+          <button class="pill subtle" id="btnLoadModels">Load</button>
+        </div>
+        <small id="altState">Pick a provider, then press Load to see which models it offers.</small>
+        <button class="pill wide subtle" id="btnTestModel">Test this model</button>
+      </div>
 
       <label class="field">
         <span>Effort</span>

@@ -211,6 +211,9 @@
     color: var(--muted);
   }
   .tag.rec { color: #ffb3ae; border-color: rgba(255, 91, 82, 0.35); }
+  .tag.free { color: #86efac; border-color: rgba(74, 222, 128, 0.35); }
+  .split.three { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .p-muted { color: var(--muted); font-size: 15px; margin: 10px 0 0; }
 
   /* --- steps ------------------------------------------------------------ */
 
@@ -379,7 +382,7 @@
 <main>
 
   <div class="wrap hero">
-    <span class="eyebrow">Windows desktop app · v1.4.1</span>
+    <span class="eyebrow">Windows desktop app · v1.5.0</span>
     <h1>Talk about your game.<br><span class="grad">Watch it get built.</span></h1>
     <p class="lede">
       RoForge is a chat window that only ever thinks about Roblox — and it can drop
@@ -400,7 +403,7 @@
     </div>
 
     <div class="chips">
-      <span class="chip"><span class="dot"></span> Runs on your Claude subscription — no API bill</span>
+      <span class="chip"><span class="dot"></span> Free option: runs on a model on your own PC</span>
       <span class="chip"><span class="dot off"></span> Everything stays on your PC</span>
       <span class="chip"><span class="dot off"></span> No admin rights needed</span>
     </div>
@@ -454,45 +457,71 @@
         <p>Optional, strictly speaking — you can use RoForge as a Roblox-flavoured chat window on its own — but the whole point is the connection.</p>
       </div></div>
       <div class="row"><span class="tick">✓</span><div>
-        <strong>A way to pay for the model.</strong>
-        <p>RoForge doesn't come with an account; it uses yours. Pick one of the two below.</p>
+        <strong>A model to think with.</strong>
+        <p>RoForge doesn't come with an account; it uses yours. Any of the three below
+           works — including one that costs nothing and needs no account anywhere.</p>
       </div></div>
     </div>
 
-    <div class="split" style="margin-top: 26px">
+    <div class="split three" style="margin-top: 26px">
       <div class="panel">
-        <span class="tag rec">Recommended</span>
+        <span class="tag rec">If you have Claude</span>
         <h3>Your Claude subscription</h3>
-        <p style="color: var(--muted); font-size: 15px; margin: 6px 0 0">
+        <p class="p-muted">
           RoForge drives the Claude Code CLI already on your PC, so there are no
           per-token charges — it's covered by Claude Pro or Max. Install the CLI once:
         </p>
         <pre><code>npm install -g @anthropic-ai/claude-code
 claude   # sign in with your Claude account</code></pre>
-        <p style="color: var(--muted); font-size: 15px; margin: 10px 0 0">
-          Needs <a href="https://nodejs.org/" target="_blank" rel="noopener">Node.js</a>
-          installed. This is the default setting — nothing to configure in RoForge.
+        <p class="p-muted">
+          Needs <a href="https://nodejs.org/" target="_blank" rel="noopener">Node.js</a>.
+          This is the default — nothing to configure in RoForge.
         </p>
       </div>
+
       <div class="panel">
-        <span class="tag">Alternative</span>
-        <h3>An Anthropic API key</h3>
-        <p style="color: var(--muted); font-size: 15px; margin: 6px 0 0">
-          Paste a key from
-          <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a>
-          into Settings instead. Billed as pay-as-you-go credits.
+        <span class="tag free">No account needed</span>
+        <h3>A model on your own PC</h3>
+        <p class="p-muted">
+          Install <a href="https://ollama.com/" target="_blank" rel="noopener">Ollama</a>,
+          pull a coding model, and point RoForge at it. Free forever, works with the
+          Wi-Fi off, and nothing about your game leaves the machine.
+        </p>
+        <pre><code>ollama pull qwen2.5-coder:14b</code></pre>
+        <p class="p-muted">
+          In Settings: <strong>Runs on → Any other model</strong>, provider
+          <strong>Ollama</strong>, then <strong>Load</strong> and pick it. No key, no
+          card, no sign-up.
+        </p>
+      </div>
+
+      <div class="panel">
+        <span class="tag">Free tiers &amp; pay-as-you-go</span>
+        <h3>A hosted model</h3>
+        <p class="p-muted">
+          The same setting takes a key from
+          <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">OpenRouter</a>,
+          <a href="https://console.groq.com/keys" target="_blank" rel="noopener">Groq</a> or
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google
+          AI Studio</a> — all with genuine free tiers — or an
+          <a href="https://console.anthropic.com/" target="_blank" rel="noopener">Anthropic
+          key</a> if you'd rather have Claude on pay-as-you-go credits.
         </p>
         <div class="callout">
-          <strong>Note:</strong> a Claude Pro/Max subscription does <em>not</em> fund API
-          keys — it's a separate balance you top up. If you see “credit balance is too
-          low”, that's this, and switching model won't help.
+          <strong>Note:</strong> a Claude Pro/Max subscription does <em>not</em> fund an
+          Anthropic API key — that's a separate balance you top up. “Credit balance is
+          too low” means this, and switching model won't help.
         </div>
-        <p style="color: var(--muted); font-size: 15px; margin: 12px 0 0">
-          Your key is encrypted with Windows DPAPI and never leaves the machine except
-          in requests to Anthropic.
-        </p>
       </div>
     </div>
+
+    <p class="sub" style="margin-top: 22px">
+      Every key is encrypted with Windows DPAPI and only ever sent to the provider you
+      chose. One caveat worth knowing before you pick: <strong>build mode</strong> asks
+      the model to plan and run a long series of actions. Claude and the bigger hosted
+      models handle that; a small local model will usually write a script or two and
+      then lose the thread. Ordinary chat and Send to Studio are fine on anything.
+    </p>
   </section>
 
   <section class="wrap" id="install">
@@ -515,10 +544,13 @@ claude   # sign in with your Claude account</code></pre>
       </li>
       <li>
         <strong>Pick what it runs on.</strong>
-        <p>Open Settings (the gear in the title bar). <strong>Runs on</strong> is set to
-           <em>Your Claude subscription</em> by default — if you installed the Claude Code
-           CLI above, there's nothing to do here. Otherwise switch to
-           <em>Anthropic API key</em> and paste your key; RoForge verifies it on the spot.</p>
+        <p>Open Settings (the gear in the title bar). <strong>Runs on</strong> defaults to
+           <em>Your Claude subscription</em> — if you installed the Claude Code CLI above,
+           there's nothing to do here.</p>
+        <p>No Claude account? Choose <em>Any other model</em>, pick a provider, press
+           <strong>Load</strong> to see what it offers, choose one, then
+           <strong>Test this model</strong> to confirm it answers. With Ollama that's the
+           whole setup — no key, nothing to pay.</p>
       </li>
       <li>
         <strong>Say hello.</strong>
@@ -614,10 +646,35 @@ claude   # sign in with your Claude account</code></pre>
 
     <details class="faq">
       <summary>“Your credit balance is too low”</summary>
-      <p>You're on the API-key engine with an empty balance. Either top up at
+      <p>You're on the Anthropic API-key engine with an empty balance. Either top up at
          console.anthropic.com, or switch <strong>Runs on</strong> to
-         <em>Your Claude subscription</em> in Settings. Choosing a cheaper model does not
-         avoid API billing — any model on an API key is billed.</p>
+         <em>Your Claude subscription</em> — or to <em>Any other model</em> and use a free
+         provider. Choosing a cheaper model does not avoid API billing: any model on an
+         API key is billed.</p>
+    </details>
+
+    <details class="faq">
+      <summary>“Nothing is answering on http://127.0.0.1:11434/v1”</summary>
+      <p>That's the local-model option with Ollama not running. Open the Ollama app (or
+         run <code>ollama serve</code>), make sure you've pulled at least one model with
+         <code>ollama pull qwen2.5-coder:14b</code>, then press <strong>Load</strong> in
+         Settings again.</p>
+    </details>
+
+    <details class="faq">
+      <summary>The model list is empty, or my model isn't in it</summary>
+      <p>RoForge lists what the server itself reports. For Ollama that's what you've
+         pulled; for a hosted provider it's what your key can reach. If the list is
+         empty the address is probably wrong — it must include the version path, e.g.
+         <code>http://127.0.0.1:11434/v1</code>, not just the host.</p>
+    </details>
+
+    <details class="faq">
+      <summary>A local model keeps losing track during a build</summary>
+      <p>Expected, and not something a prompt fixes. Build mode is a long chain of tool
+         calls, which small models handle poorly. Use a bigger model for building — a
+         free hosted one is fine — and keep the local model for questions and
+         Send to Studio.</p>
     </details>
 
     <details class="faq">

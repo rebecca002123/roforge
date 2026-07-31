@@ -13,6 +13,12 @@ contextBridge.exposeInMainWorld('forge', {
   updateSettings: (patch) => ipcRenderer.invoke('settings:update', patch),
   setApiKey: (key) => ipcRenderer.invoke('settings:set-key', key),
 
+  // the OpenAI-compatible engine (Ollama, OpenRouter, Groq, …)
+  providers: () => ipcRenderer.invoke('compat:providers'),
+  setAltKey: (key) => ipcRenderer.invoke('settings:set-alt-key', key),
+  listModels: (baseUrl, key) => ipcRenderer.invoke('compat:models', { baseUrl, key }),
+  testModel: (baseUrl, key, model) => ipcRenderer.invoke('compat:test', { baseUrl, key, model }),
+
   // conversations
   listChats: () => ipcRenderer.invoke('chat:list'),
   getChat: (id) => ipcRenderer.invoke('chat:get', id),

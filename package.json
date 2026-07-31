@@ -1,6 +1,6 @@
 {
   "name": "roforge",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "A liquid-glass Roblox coding companion for Windows: chat with Claude about Luau and push scripts straight into Roblox Studio",
   "main": "main.js",
   "type": "commonjs",

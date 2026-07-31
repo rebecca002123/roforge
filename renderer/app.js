@@ -213,15 +213,31 @@ async function newChat() {
 
 // --- sending -------------------------------------------------------------
 
+/**
+ * Whether the chosen engine can actually be used yet, phrased as the thing to
+ * go and do. Claude Code needs nothing set up here; the other two do.
+ * (Whether a provider needs a key at all is decided in the main process, which
+ * knows the presets — a missing one comes back as `no-key`.)
+ */
+function whatsMissing(settings) {
+  if (settings.engine === 'api' && !settings.hasKey) return 'Add your Anthropic API key first';
+  if (settings.engine === 'openai') {
+    if (!settings.altBaseUrl) return 'Set the server address first';
+    if (!settings.altModel) return 'Choose a model first';
+  }
+  return null;
+}
+
 async function sendMessage() {
   const input = $('input');
   const text = input.value.trim();
   if (!text || state.streaming) return;
 
   const settings = await window.forge.getSettings();
-  if (settings.engine !== 'claude-code' && !settings.hasKey) {
+  const missing = whatsMissing(settings);
+  if (missing) {
     openSettings();
-    toast('Add your Anthropic API key first', true);
+    toast(missing, true);
     return;
   }
 
@@ -342,21 +358,91 @@ async function insertBlock(btn) {
 
 // --- settings ------------------------------------------------------------
 
+let providers = null; // filled once from the main process
+
+const ENGINE_HELP = {
+  'claude-code': 'Uses the Claude Code CLI already on this PC, so it draws on your Claude subscription instead of API credits. Studio tools reach it over MCP.',
+  api: 'Calls the Anthropic API directly. Billed as pay-as-you-go credits, which a Claude subscription does not cover.',
+  openai: 'For anyone without a Claude account. Point RoForge at a model running on this PC (free, offline) or at a hosted provider with a free tier.',
+};
+
 function paintEngine(engine) {
-  const viaCli = engine === 'claude-code';
-  // The API key and effort only mean anything on the API path; hiding them
-  // keeps the sheet honest about what actually applies.
-  $('apiKeyField').hidden = viaCli;
-  $('effort').closest('.field').hidden = viaCli;
-  $('engineHelp').textContent = viaCli
-    ? 'Uses the Claude Code CLI already on this PC, so it draws on your Claude subscription instead of API credits. Studio tools reach it over MCP.'
-    : 'Calls the Anthropic API directly. Billed as pay-as-you-go credits, which a Claude subscription does not cover.';
+  // Each engine has its own settings; showing all three at once would only
+  // invite filling in the ones that do nothing.
+  $('apiKeyField').hidden = engine !== 'api';
+  $('effort').closest('.field').hidden = engine !== 'api';
+  $('compatFields').hidden = engine !== 'openai';
+  $('engineHelp').textContent = ENGINE_HELP[engine] || '';
+}
+
+function paintProvider(id) {
+  const preset = (providers && providers[id]) || null;
+  $('providerHelp').textContent = preset ? preset.hint : '';
+  // A local model needs no key at all — that's the whole point of the option,
+  // so don't leave an empty key box implying otherwise.
+  const keyless = Boolean(preset && preset.keyless);
+  $('altKeyLabel').hidden = keyless;
+  $('altKey').hidden = keyless;
+}
+
+/** Switching preset moves the address with it, unless it's been hand-edited. */
+function applyProviderPreset(id) {
+  const preset = (providers && providers[id]) || null;
+  if (preset && preset.baseUrl) $('altBaseUrl').value = preset.baseUrl;
+  else if (id === 'custom') $('altBaseUrl').value = '';
+  paintProvider(id);
+}
+
+function setAltState(text, cls) {
+  const el = $('altState');
+  el.textContent = text;
+  el.className = cls || '';
+}
+
+async function loadModels() {
+  setAltState('Asking the server what it can run…');
+  const res = await window.forge.listModels($('altBaseUrl').value.trim(), $('altKey').value.trim());
+  if (!res.ok) { setAltState(res.error, 'state-bad'); return; }
+  if (!res.models.length) {
+    setAltState('That server answered, but has no models installed yet.', 'state-bad');
+    return;
+  }
+  const select = $('altModel');
+  const previous = select.value;
+  select.innerHTML = res.models.map((m) => `<option value="${window.md.escapeHtml(m)}">${window.md.escapeHtml(m)}</option>`).join('');
+  if (res.models.includes(previous)) select.value = previous;
+  setAltState(`${res.models.length} model${res.models.length === 1 ? '' : 's'} available.`, 'state-ok');
+}
+
+async function testModel() {
+  const model = $('altModel').value;
+  if (!model) { setAltState('Pick a model first.', 'state-bad'); return; }
+  setAltState('Sending a one-word test…');
+  const res = await window.forge.testModel($('altBaseUrl').value.trim(), $('altKey').value.trim(), model);
+  setAltState(res.ok ? `${model} answered. You're set.` : res.error, res.ok ? 'state-ok' : 'state-bad');
 }
 
 async function openSettings() {
   const s = await window.forge.getSettings();
+  if (!providers) {
+    providers = await window.forge.providers();
+    $('provider').innerHTML = Object.entries(providers)
+      .map(([id, p]) => `<option value="${id}">${window.md.escapeHtml(p.label)}</option>`)
+      .join('');
+  }
   $('engine').value = s.engine || 'api';
   paintEngine($('engine').value);
+  $('provider').value = s.provider || 'ollama';
+  paintProvider($('provider').value);
+  $('altBaseUrl').value = s.altBaseUrl || '';
+  $('altKey').value = '';
+  $('altKey').placeholder = s.hasAltKey ? '•••••••• (saved)' : 'sk-…';
+  $('altModel').innerHTML = s.altModel
+    ? `<option value="${window.md.escapeHtml(s.altModel)}">${window.md.escapeHtml(s.altModel)}</option>`
+    : '<option value="">—</option>';
+  setAltState(s.altModel
+    ? `Using ${s.altModel}. Press Load to change it.`
+    : 'Pick a provider, then press Load to see which models it offers.');
   $('effort').value = s.effort;
   $('showThinking').checked = s.showThinking;
   $('portLabel').textContent = s.bridgePort;
@@ -389,10 +475,18 @@ async function saveSettings() {
     }
     $('apiKey').value = '';
   }
+  const altKey = $('altKey').value.trim();
+  if (altKey) {
+    await window.forge.setAltKey(altKey);
+    $('altKey').value = '';
+  }
   await window.forge.updateSettings({
     engine: $('engine').value,
     effort: $('effort').value,
     showThinking: $('showThinking').checked,
+    provider: $('provider').value,
+    altBaseUrl: $('altBaseUrl').value.trim(),
+    altModel: $('altModel').value,
   });
   $('settingsModal').hidden = true;
   toast('Settings saved');
@@ -421,6 +515,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('btnSettings').onclick = openSettings;
   $('btnSaveSettings').onclick = saveSettings;
   $('engine').onchange = () => paintEngine($('engine').value);
+  $('provider').onchange = () => applyProviderPreset($('provider').value);
+  $('btnLoadModels').onclick = loadModels;
+  $('btnTestModel').onclick = testModel;
   $('btnInstallPlugin').onclick = async () => {
     const st = $('pluginState');
     st.textContent = 'Installing…';
@@ -511,6 +608,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (chats.length) openChat(chats[0].id);
   else newChat();
 
-  if (settings.engine !== 'claude-code' && !settings.hasKey) openSettings();
+  if (whatsMissing(settings)) openSettings();
   $('input').focus();
 });
