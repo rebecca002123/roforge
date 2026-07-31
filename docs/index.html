@@ -733,13 +733,12 @@ npm run dist       # or build dist/RoForge-Setup-&lt;version&gt;.exe</code></pre
 
 <script>
   /* ------------------------------------------------------------------ *
-   *  EDIT THIS ONE LINE when the installer is uploaded.                 *
-   *  e.g. "https://github.com/rebecca002123/roforge/releases/download/  *
-   *        v1.4.1/RoForge-Setup-1.4.1.exe"                              *
-   *  Until it's a real URL the button stays visibly disabled rather     *
-   *  than sending people to a 404.                                      *
+   *  Bump this on each release, alongside the version in the eyebrow    *
+   *  and the release notes. If it's ever left empty the button renders  *
+   *  disabled rather than sending people to a 404.                      *
    * ------------------------------------------------------------------ */
-  const DOWNLOAD_URL = "";
+  const DOWNLOAD_URL =
+    "https://github.com/rebecca002123/roforge/releases/download/v1.5.0/RoForge-Setup-1.5.0.exe";
 
   const btn = document.getElementById("dl");
   if (DOWNLOAD_URL) {
