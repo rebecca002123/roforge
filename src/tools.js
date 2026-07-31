@@ -4,9 +4,10 @@
 // these, they run inside your open place, and the result comes back so it can
 // decide what to do next.
 //
-// Kept deliberately small: five verbs cover building a game (scripts, objects,
-// tweaking objects, removing objects, looking at what's there). A bigger tool
-// surface would mostly be more ways to get the same job wrong.
+// Kept deliberately small: six verbs cover building a game (scripts, objects,
+// tweaking objects, removing objects, pulling in a catalog asset, looking at
+// what's there). A bigger tool surface would mostly be more ways to get the
+// same job wrong.
 
 const bridge = require('./bridge');
 
@@ -81,6 +82,27 @@ const TOOLS = [
     },
   },
   {
+    name: 'insert_asset',
+    description:
+      'Insert an existing Roblox catalog asset into the place by its numeric id — a toolbox model, an image, a sound, a mesh or an animation. Use this when the user gives you an id or an asset link; you cannot search the catalog, so never invent an id. The asset type is looked up automatically and the right instance is built for it (a Model is inserted, an image becomes a Decal or ImageLabel, a sound becomes a Sound, and so on).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        asset_id: { type: 'integer', description: 'The numeric asset id, e.g. 1234567 from roblox.com/library/1234567/Sword.' },
+        path: {
+          type: 'string',
+          description: 'An existing container to put it in, e.g. "Workspace", "Workspace/Props" or "ReplicatedStorage". Defaults to Workspace. Unlike the other tools this must already exist.',
+        },
+        asset_kind: {
+          type: 'string',
+          enum: ['model', 'image', 'decal', 'audio', 'mesh', 'meshpart', 'animation'],
+          description: 'Only set this to override the automatic lookup — for instance to put an image on a part as a Decal when the catalog calls it an Image.',
+        },
+      },
+      required: ['asset_id'],
+    },
+  },
+  {
     name: 'list_tree',
     description:
       "Look at what's actually in the place under a path — names and ClassNames. Use it to check your work landed, to find existing objects before assuming, and to read the layout before changing it.",
@@ -116,6 +138,13 @@ async function execute(name, input) {
       return bridge.runJob({ kind: 'properties', path: input.path, properties: input.properties || {} });
     case 'delete_instance':
       return bridge.runJob({ kind: 'delete', path: input.path });
+    case 'insert_asset':
+      return bridge.runJob({
+        kind: 'asset',
+        assetId: Number(input.asset_id),
+        path: input.path || 'Workspace',
+        assetKind: input.asset_kind || null,
+      });
     case 'list_tree':
       return bridge.runJob({ kind: 'tree', path: input.path, depth: Math.min(Number(input.depth) || 2, 4) });
     default:
@@ -137,6 +166,7 @@ function describe(name, input) {
     case 'create_instance': return `${input.class_name} → ${input.path}`;
     case 'set_properties': return `set properties on ${input.path}`;
     case 'delete_instance': return `delete ${input.path}`;
+    case 'insert_asset': return `insert asset ${input.asset_id} → ${input.path || 'Workspace'}`;
     case 'list_tree': return `read ${input.path}`;
     default: return name;
   }

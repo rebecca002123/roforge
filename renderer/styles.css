@@ -305,6 +305,43 @@ body {
 }
 .composer textarea:focus { border-color: rgba(255, 91, 82, 0.45); }
 
+/* --- asset inserter ---------------------------------------------------- */
+
+.asset-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.asset-row { display: flex; gap: 8px; align-items: center; }
+.asset-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--code-bg);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+  outline: none;
+}
+.asset-row input:focus { border-color: rgba(255, 91, 82, 0.45); }
+.asset-row .pill { flex: 0 0 auto; }
+.asset-label {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.asset-bar small { color: var(--muted); font-size: 11.5px; line-height: 1.45; }
+.asset-bar small.state-bad { color: var(--warn); }
+.asset-bar small.state-ok { color: var(--ok); }
+
 .composer-actions {
   display: flex;
   align-items: center;

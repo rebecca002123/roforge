@@ -10,7 +10,7 @@
 <body>
   <header class="titlebar">
     <div class="tb-drag">
-      <span class="brand">Ro<span class="brand-accent">Forge</span></span>
+      <span class="brand">Blox<span class="brand-accent">wright</span></span>
       <span class="chip" id="studioChip" title="Roblox Studio plugin connection">
         <span class="dot"></span><span id="studioLabel">Studio offline</span>
       </span>
@@ -39,11 +39,25 @@
   </div>
 
   <footer class="composer">
+    <div class="asset-bar" id="assetBar" hidden>
+      <div class="asset-row">
+        <input type="text" id="assetInput" placeholder="Paste an asset ID or a Roblox link…" autocomplete="off" spellcheck="false">
+        <button class="pill" id="btnAssetInsert">Insert</button>
+      </div>
+      <div class="asset-row">
+        <label class="asset-label" for="assetPath">Into</label>
+        <input type="text" id="assetPath" placeholder="Workspace" autocomplete="off" spellcheck="false">
+      </div>
+      <small id="assetHint">Models, images, decals, sounds, meshes and animations. It works out which
+        it is from the ID — you don't have to tell it.</small>
+    </div>
+
     <textarea id="input" rows="1" placeholder="Ask about your Roblox game — Luau, remotes, DataStores, a bug you're stuck on…"></textarea>
     <div class="composer-actions">
       <button class="mode" id="btnBuild" title="Let Bloxwright build directly in your open place">
         <span class="mode-dot"></span>Build in Studio
       </button>
+      <button class="mode" id="btnAsset" title="Insert a Roblox asset by ID">＋ Asset</button>
       <span class="hint" id="hint">Enter to send · Shift+Enter for a new line</span>
       <button class="send" id="btnSend">Send</button>
       <button class="send stop" id="btnStop" hidden>Stop</button>

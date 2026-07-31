@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('forge', {
   // Studio bridge
   studioStatus: () => ipcRenderer.invoke('studio:status'),
   insertScript: (job) => ipcRenderer.invoke('studio:insert', job),
+  insertAsset: (assetId, path, assetKind) => ipcRenderer.invoke('studio:insert-asset', { assetId, path, assetKind }),
   installPlugin: () => ipcRenderer.invoke('studio:install-plugin'),
   openPluginsFolder: () => ipcRenderer.invoke('studio:open-plugins-folder'),
   onStudioStatus: (fn) => ipcRenderer.on('studio:status', (_e, st) => fn(st)),

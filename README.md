@@ -62,10 +62,10 @@ reinstalls and upgrades.
 ## Build mode
 
 Toggle **Build in Studio** next to the composer, ask for a game, and it builds
-it — no clicking, no pasting. Claude gets five tools that run inside your open
-place: `create_script`, `create_instance`, `set_properties`, `delete_instance`
-and `list_tree`. It looks at what's there, plans, builds in dependency order,
-reads the place back to check its work, then reports.
+it — no clicking, no pasting. Claude gets six tools that run inside your open
+place: `create_script`, `create_instance`, `set_properties`, `delete_instance`,
+`insert_asset` and `list_tree`. It looks at what's there, plans, builds in
+dependency order, reads the place back to check its work, then reports.
 
 Each action appears in the transcript as it happens, so a long build isn't a
 blank wait, and every one is a single `Ctrl+Z` in Studio.
@@ -98,6 +98,26 @@ where you insert code yourself.
 
 Press `Ctrl+Alt+B` anywhere to show or hide the window. It opens down the
 right-hand side of the screen, sized to sit beside Studio rather than over it.
+
+## Inserting catalog assets
+
+The **＋ Asset** button next to the composer takes an asset id or a Roblox link
+— the address bar, a share link, `rbxassetid://…`, or the bare number — and
+puts that asset into your open place.
+
+It asks the catalog what the id actually is before inserting, because only
+Models can be brought in with `InsertService:LoadAsset`. An image is a
+*reference*, not an instance: it becomes a `Decal` when you aim it at a part
+and an `ImageLabel` when you aim it at a GUI. A sound becomes a `Sound`, a
+classic mesh becomes a `Part` with a `SpecialMesh`, a MeshPart is built with
+`CreateMeshPartAsync`, an animation becomes an `Animation`. Whatever is
+created gets selected in the Explorer, and the whole insert is one `Ctrl+Z`.
+
+Assets have to be public, or owned by the account Studio is signed into —
+that's Roblox's rule, not ours, and it's the usual reason an insert fails.
+
+Claude can do this too, via the `insert_asset` tool, when you give it an id in
+conversation. It can't search the catalog, so it will never invent one.
 
 ## Connecting Roblox Studio
 

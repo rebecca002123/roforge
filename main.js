@@ -22,7 +22,7 @@ let win = null;
 // Must match PLUGIN_VERSION in plugin/Bloxwright.server.lua. Studio caches plugins
 // until it reloads them, so an updated app can easily be talking to last
 // version's plugin — better to say so than to fail a build halfway through.
-const PLUGIN_PROTOCOL = 2;
+const PLUGIN_PROTOCOL = 3;
 
 /**
  * What the UI needs to describe the Studio link: whether the plugin is talking
@@ -312,6 +312,27 @@ function friendlyError(err) {
 
 ipcMain.handle('studio:status', () => studioState());
 ipcMain.handle('studio:insert', (_e, job) => bridge.enqueueScript(job));
+
+/**
+ * Insert a catalog asset by id. Unlike a script insert this waits for Studio's
+ * answer: half of these fail for reasons only the user can fix (the asset is
+ * private, the id was a bundle), and "sent" would be a lie.
+ */
+ipcMain.handle('studio:insert-asset', async (_e, { assetId, path, assetKind }) => {
+  if (!bridge.isConnected()) {
+    return { ok: false, error: 'Roblox Studio is not connected — open it and click the Bloxwright button on the Plugins tab.' };
+  }
+  const status = bridge.status();
+  if ((status.pluginVersion || 1) < PLUGIN_PROTOCOL) {
+    return { ok: false, error: 'Studio is running an older Bloxwright plugin that cannot insert assets. Reinstall it from Settings and restart Studio.' };
+  }
+  return bridge.runJob({
+    kind: 'asset',
+    assetId: Number(assetId),
+    path: path || 'Workspace',
+    assetKind: assetKind || null,
+  });
+});
 
 // Where Studio looks for local plugins on Windows.
 function studioPluginsDir() {

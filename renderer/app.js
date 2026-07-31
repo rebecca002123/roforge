@@ -356,6 +356,69 @@ async function insertBlock(btn) {
   }, 6000);
 }
 
+// --- inserting catalog assets --------------------------------------------
+
+/**
+ * Pull an asset id out of whatever the user pasted. People copy the address
+ * bar, the share link, the toolbox right-click, or type the bare number — and
+ * an app that only accepts one of those makes them do the parsing by hand.
+ *
+ *   1234567
+ *   rbxassetid://1234567
+ *   https://www.roblox.com/library/1234567/Sword
+ *   https://create.roblox.com/store/asset/1234567/Sword
+ *   https://www.roblox.com/catalog/1234567/Hat
+ */
+function parseAssetId(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return null;
+  if (/^\d+$/.test(text)) return Number(text);
+
+  const patterns = [
+    /rbxassetid:\/\/(\d+)/i,
+    /(?:library|catalog|asset|asset-thumbnail|bundles)\/(\d+)/i,
+    /[?&](?:id|assetId)=(\d+)/i,
+  ];
+  for (const re of patterns) {
+    const hit = text.match(re);
+    if (hit) return Number(hit[1]);
+  }
+  // Last resort: the longest run of digits, which covers link shapes that
+  // don't exist yet. Short numbers are almost certainly not ids.
+  const runs = text.match(/\d{4,}/g);
+  if (runs) return Number(runs.sort((a, b) => b.length - a.length)[0]);
+  return null;
+}
+
+function setAssetHint(text, cls) {
+  const el = $('assetHint');
+  el.textContent = text;
+  el.className = cls || '';
+}
+
+async function insertAsset() {
+  const id = parseAssetId($('assetInput').value);
+  if (!id) {
+    setAssetHint('I could not find an asset id in that. Paste the number, or the link to the asset page.', 'state-bad');
+    return;
+  }
+  const path = $('assetPath').value.trim() || 'Workspace';
+  const btn = $('btnAssetInsert');
+  btn.disabled = true;
+  setAssetHint(`Asking Studio for ${id}…`);
+  try {
+    const res = await window.forge.insertAsset(id, path);
+    if (res.ok) {
+      setAssetHint(res.message || `Inserted ${id}.`, 'state-ok');
+      $('assetInput').value = '';
+    } else {
+      setAssetHint(res.error || 'Studio could not insert that.', 'state-bad');
+    }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 // --- settings ------------------------------------------------------------
 
 let providers = null; // filled once from the main process
@@ -515,6 +578,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('btnSettings').onclick = openSettings;
   $('btnSaveSettings').onclick = saveSettings;
   $('engine').onchange = () => paintEngine($('engine').value);
+  $('btnAsset').onclick = () => {
+    const bar = $('assetBar');
+    bar.hidden = !bar.hidden;
+    $('btnAsset').classList.toggle('on', !bar.hidden);
+    if (!bar.hidden) $('assetInput').focus();
+  };
+  $('btnAssetInsert').onclick = insertAsset;
+  $('assetInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); insertAsset(); }
+  });
+  $('assetPath').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); insertAsset(); }
+  });
+
   $('provider').onchange = () => applyProviderPreset($('provider').value);
   $('btnLoadModels').onclick = loadModels;
   $('btnTestModel').onclick = testModel;

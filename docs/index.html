@@ -381,7 +381,7 @@
 <main>
 
   <div class="wrap hero">
-    <span class="eyebrow">Windows desktop app · v1.6.0</span>
+    <span class="eyebrow">Windows desktop app · v1.7.0</span>
     <h1>Talk about your game.<br><span class="grad">Watch it get built.</span></h1>
     <p class="lede">
       Bloxwright is a chat window that only ever thinks about Roblox — and it can drop
@@ -432,6 +432,14 @@
         <p>Flip one toggle and it builds inside your open place itself: creates parts,
            folders, GUIs and scripts, reads the place back to check its work, and shows
            every action live as it happens.</p>
+      </div>
+      <div class="panel">
+        <span class="ico">📦</span>
+        <h3>Paste an asset ID</h3>
+        <p>Found a model, sound or image on Roblox? Paste the link — or just the
+           number — and it lands in your open place. It looks up what the ID
+           actually is, so an image arrives as a decal and a sound as a Sound,
+           not an error about asset types.</p>
       </div>
       <div class="panel">
         <span class="ico">📚</span>
@@ -637,6 +645,16 @@ claude   # sign in with your Claude account</code></pre>
     </details>
 
     <details class="faq">
+      <summary>An asset won't insert</summary>
+      <p>Roblox only lets a plugin insert assets that are <strong>public</strong>, or
+         owned by the account Studio is signed into — that's their rule, and it's the
+         usual reason. Otherwise: check the chip is green, and that the container you
+         typed under <em>Into</em> already exists (unlike scripts, assets aren't given
+         a folder to live in). Bundles and packages aren't single assets, so their
+         IDs won't work.</p>
+    </details>
+
+    <details class="faq">
       <summary>Build mode refuses to start</summary>
       <p>It needs Studio connected <em>and</em> on a current plugin. Check the chip is
          green first. Ordinary chat works regardless — turn the toggle off and insert
@@ -717,7 +735,7 @@ claude   # sign in with your Claude account</code></pre>
   // so the button works rather than 404s. Flip both this and the source link
   // above the moment the repo is transferred.
   const DOWNLOAD_URL =
-    "https://github.com/rebecca002123/bloxwright/releases/download/v1.6.0/Bloxwright-Setup-1.6.0.exe";
+    "https://github.com/rebecca002123/bloxwright/releases/download/v1.7.0/Bloxwright-Setup-1.7.0.exe";
 
   const btn = document.getElementById("dl");
   if (DOWNLOAD_URL) {
