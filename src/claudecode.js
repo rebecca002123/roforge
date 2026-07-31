@@ -18,7 +18,7 @@ const { CORE, BUILD_MODE } = require('./prompt');
 
 const TOOL_NAMES = [
   'create_script', 'create_instance', 'set_properties', 'delete_instance', 'list_tree',
-].map((t) => `mcp__roforge__${t}`);
+].map((t) => `mcp__bloxwright__${t}`);
 
 let child = null;
 
@@ -55,7 +55,7 @@ function isInstalled() {
  * land there.
  */
 function workspaceDir() {
-  const dir = path.join(os.tmpdir(), 'roforge-workspace');
+  const dir = path.join(os.tmpdir(), 'bloxwright-workspace');
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
@@ -69,18 +69,18 @@ function writeMcpConfig(appDir, execPath) {
   const serverScript = path.join(appDir, 'mcp', 'server.js').replace('app.asar', 'app.asar.unpacked');
   const config = {
     mcpServers: {
-      roforge: {
+      bloxwright: {
         command: execPath,
         args: [serverScript],
         env: {
           ELECTRON_RUN_AS_NODE: '1',
-          ROFORGE_PORT: String(bridge.jobPort()),
-          ROFORGE_TOKEN: bridge.jobToken(),
+          BLOXWRIGHT_PORT: String(bridge.jobPort()),
+          BLOXWRIGHT_TOKEN: bridge.jobToken(),
         },
       },
     },
   };
-  const file = path.join(os.tmpdir(), 'roforge-mcp.json');
+  const file = path.join(os.tmpdir(), 'bloxwright-mcp.json');
   fs.writeFileSync(file, JSON.stringify(config, null, 2));
   return file;
 }
@@ -98,7 +98,7 @@ function send({ prompt, sessionId, buildMode, studioContext, appDir, execPath, o
     // Claude Code has its own system prompt (it's a coding agent); ours is
     // appended so it knows Roblox, and in build mode, that it has hands.
     const extraPrompt = buildMode
-      ? `${CORE}\n\n${BUILD_MODE}\n\nYour Studio tools are the mcp__roforge__* tools.`
+      ? `${CORE}\n\n${BUILD_MODE}\n\nYour Studio tools are the mcp__bloxwright__* tools.`
       : `${CORE}\n\nYou are answering in a chat window, not editing files on disk.`;
 
     const args = [
@@ -178,7 +178,7 @@ ${prompt}` : prompt);
             // Every tool, not just the Studio ones — Claude Code spends much of
             // a build reading and planning with its own tools, and hiding that
             // makes a working agent look like a hung one.
-            if (String(block.name).startsWith('mcp__roforge__')) {
+            if (String(block.name).startsWith('mcp__bloxwright__')) {
               actions.push({ label, ok: true });
             }
             onEvent({ type: 'tool-start', id: block.id, label });
@@ -235,11 +235,11 @@ function short(value) {
 
 function describeCall(name, input) {
   const raw = String(name);
-  if (!raw.startsWith('mcp__roforge__')) {
+  if (!raw.startsWith('mcp__bloxwright__')) {
     const builtin = BUILTIN_LABELS[raw];
     return builtin ? builtin(input || {}) : raw;
   }
-  const tool = raw.replace('mcp__roforge__', '');
+  const tool = raw.replace('mcp__bloxwright__', '');
   switch (tool) {
     case 'create_script': return `${input.script_type || 'Script'} → ${input.path}`;
     case 'create_instance': return `${input.class_name} → ${input.path}`;

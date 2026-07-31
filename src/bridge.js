@@ -66,7 +66,7 @@ function enqueueScript({ path, type, source }) {
   const job = {
     id: newId(),
     kind: 'script',
-    path: String(path || 'ServerScriptService/RoForgeScript'),
+    path: String(path || 'ServerScriptService/BloxwrightScript'),
     type: String(type || 'Script'),
     source: String(source || ''),
   };
@@ -83,7 +83,7 @@ function enqueueScript({ path, type, source }) {
 function runJob(job) {
   return new Promise((resolve) => {
     if (!isConnected()) {
-      resolve({ ok: false, error: 'Roblox Studio is not connected to RoForge.' });
+      resolve({ ok: false, error: 'Roblox Studio is not connected to Bloxwright.' });
       return;
     }
     const id = newId();
@@ -130,7 +130,7 @@ async function handle(req, res) {
     // Deliberately does NOT count as a heartbeat: /poll is the plugin's real
     // pulse, and anything else hitting this shouldn't be able to make the UI
     // claim Studio is connected.
-    return send(res, 200, { ok: true, app: 'roforge' });
+    return send(res, 200, { ok: true, app: 'bloxwright' });
   }
 
   if (url.pathname === '/poll' && req.method === 'POST') {
@@ -153,7 +153,7 @@ async function handle(req, res) {
 
   // Job submission from the MCP server, i.e. Claude Code acting on the place.
   if (url.pathname === '/job' && req.method === 'POST') {
-    if (req.headers['x-roforge-token'] !== JOB_TOKEN) {
+    if (req.headers['x-bloxwright-token'] !== JOB_TOKEN) {
       return send(res, 403, { ok: false, error: 'bad token' });
     }
     const job = await readBody(req);

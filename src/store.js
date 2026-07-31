@@ -8,7 +8,7 @@ const { app, safeStorage } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
-const FILE = () => path.join(app.getPath('userData'), 'roforge.json');
+const FILE = () => path.join(app.getPath('userData'), 'bloxwright.json');
 
 const DEFAULTS = {
   apiKey: null, // base64 of an encrypted buffer, or { plain: "..." } if unavailable

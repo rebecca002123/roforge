@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RoForge — a Roblox coding companion for Windows</title>
-<meta name="description" content="RoForge is a Windows app that sits beside Roblox Studio: chat with Claude about Luau and push scripts straight into your open place.">
-<meta property="og:title" content="RoForge">
+<title>Bloxwright — a Roblox coding companion for Windows</title>
+<meta name="description" content="Bloxwright is a Windows app that sits beside Roblox Studio: chat with Claude about Luau and push scripts straight into your open place.">
+<meta property="og:title" content="Bloxwright">
 <meta property="og:description" content="Chat with Claude about Luau, and push the scripts straight into Roblox Studio.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23141824'/><g transform='rotate(-18 32 32)'><rect x='16' y='16' width='32' height='32' rx='4' fill='%23ff5b52'/><rect x='26' y='26' width='12' height='12' rx='1.5' fill='%23141824'/></g></svg>">
@@ -381,10 +381,10 @@
 <main>
 
   <div class="wrap hero">
-    <span class="eyebrow">Windows desktop app · v1.5.0</span>
+    <span class="eyebrow">Windows desktop app · v1.6.0</span>
     <h1>Talk about your game.<br><span class="grad">Watch it get built.</span></h1>
     <p class="lede">
-      RoForge is a chat window that only ever thinks about Roblox — and it can drop
+      Bloxwright is a chat window that only ever thinks about Roblox — and it can drop
       the scripts it writes straight into your open place in Studio. Ask for a coin
       system and it writes one, places it in <code>ServerScriptService</code>, and you
       press play.
@@ -449,15 +449,15 @@
     <div class="panel req">
       <div class="row"><span class="tick">✓</span><div>
         <strong>Windows 10 or 11, 64-bit.</strong>
-        <p>RoForge installs per-user, so it never asks for admin rights. No macOS or Linux build.</p>
+        <p>Bloxwright installs per-user, so it never asks for admin rights. No macOS or Linux build.</p>
       </div></div>
       <div class="row"><span class="tick">✓</span><div>
         <strong>Roblox Studio.</strong>
-        <p>Optional, strictly speaking — you can use RoForge as a Roblox-flavoured chat window on its own — but the whole point is the connection.</p>
+        <p>Optional, strictly speaking — you can use Bloxwright as a Roblox-flavoured chat window on its own — but the whole point is the connection.</p>
       </div></div>
       <div class="row"><span class="tick">✓</span><div>
         <strong>A model to think with.</strong>
-        <p>RoForge doesn't come with an account; it uses yours. Any of the three below
+        <p>Bloxwright doesn't come with an account; it uses yours. Any of the three below
            works — including one that costs nothing and needs no account anywhere.</p>
       </div></div>
     </div>
@@ -467,14 +467,14 @@
         <span class="tag rec">If you have Claude</span>
         <h3>Your Claude subscription</h3>
         <p class="p-muted">
-          RoForge drives the Claude Code CLI already on your PC, so there are no
+          Bloxwright drives the Claude Code CLI already on your PC, so there are no
           per-token charges — it's covered by Claude Pro or Max. Install the CLI once:
         </p>
         <pre><code>npm install -g @anthropic-ai/claude-code
 claude   # sign in with your Claude account</code></pre>
         <p class="p-muted">
           Needs <a href="https://nodejs.org/" target="_blank" rel="noopener">Node.js</a>.
-          This is the default — nothing to configure in RoForge.
+          This is the default — nothing to configure in Bloxwright.
         </p>
       </div>
 
@@ -483,7 +483,7 @@ claude   # sign in with your Claude account</code></pre>
         <h3>A model on your own PC</h3>
         <p class="p-muted">
           Install <a href="https://ollama.com/" target="_blank" rel="noopener">Ollama</a>,
-          pull a coding model, and point RoForge at it. Free forever, works with the
+          pull a coding model, and point Bloxwright at it. Free forever, works with the
           Wi-Fi off, and nothing about your game leaves the machine.
         </p>
         <pre><code>ollama pull qwen2.5-coder:14b</code></pre>
@@ -529,8 +529,8 @@ claude   # sign in with your Claude account</code></pre>
     <ol class="steps">
       <li>
         <strong>Download and run the installer.</strong>
-        <p>It's a one-click per-user install: RoForge lands in
-           <code>%LOCALAPPDATA%\Programs\RoForge</code> with a desktop and Start Menu
+        <p>It's a one-click per-user install: Bloxwright lands in
+           <code>%LOCALAPPDATA%\Programs\Bloxwright</code> with a desktop and Start Menu
            shortcut, plus an entry in Add or Remove Programs. It launches itself when
            it's done.</p>
         <div class="callout">
@@ -538,7 +538,7 @@ claude   # sign in with your Claude account</code></pre>
           signing certificates cost hundreds a year — so SmartScreen shows
           “Windows protected your PC”. Click <strong>More info → Run anyway</strong>.
           If you'd rather not trust a stranger's binary, the
-          <a href="https://github.com/rebecca002123/roforge" target="_blank" rel="noopener">full
+          <a href="https://github.com/rebecca002123/bloxwright" target="_blank" rel="noopener">full
           source is public</a> — every line of it is there to read.
         </div>
       </li>
@@ -554,7 +554,7 @@ claude   # sign in with your Claude account</code></pre>
       </li>
       <li>
         <strong>Say hello.</strong>
-        <p>Type a question and you're working. Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>R</kbd>
+        <p>Type a question and you're working. Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>B</kbd>
            anywhere in Windows to show or hide the window — it opens down the right-hand
            side of the screen, sized to sit beside Studio rather than on top of it.</p>
       </li>
@@ -571,9 +571,9 @@ claude   # sign in with your Claude account</code></pre>
            Nothing to download separately, nothing to drag anywhere.</p>
       </li>
       <li>
-        <strong>Restart Studio, then click the RoForge button on the Plugins tab.</strong>
+        <strong>Restart Studio, then click the Bloxwright button on the Plugins tab.</strong>
         <p>Studio only picks up new plugins on start-up. Once you click the button the
-           chip in RoForge's title bar turns green and shows your place name.</p>
+           chip in Bloxwright's title bar turns green and shows your place name.</p>
       </li>
       <li>
         <strong>Allow script injection when Studio asks.</strong>
@@ -623,14 +623,14 @@ claude   # sign in with your Claude account</code></pre>
     <details class="faq">
       <summary>The chip says “Studio open · not linked”</summary>
       <p>Studio is running but the plugin hasn't checked in. Click the
-         <strong>RoForge</strong> button on the Plugins tab. If it isn't there, run
+         <strong>Bloxwright</strong> button on the Plugins tab. If it isn't there, run
          Settings → Install plugin into Roblox Studio again and restart Studio —
          Studio only loads plugins at start-up.</p>
     </details>
 
     <details class="faq">
       <summary>It says the plugin is out of date</summary>
-      <p>The app and plugin check each other's protocol version, and RoForge would rather
+      <p>The app and plugin check each other's protocol version, and Bloxwright would rather
          tell you than half-build against an old plugin. Re-run the install button in
          Settings, then restart Studio. Studio sometimes takes a minute or two to notice
          a plugin file changed, which is why a restart is the reliable fix.</p>
@@ -662,7 +662,7 @@ claude   # sign in with your Claude account</code></pre>
 
     <details class="faq">
       <summary>The model list is empty, or my model isn't in it</summary>
-      <p>RoForge lists what the server itself reports. For Ollama that's what you've
+      <p>Bloxwright lists what the server itself reports. For Ollama that's what you've
          pulled; for a hosted provider it's what your key can reach. If the list is
          empty the address is probably wrong — it must include the version path, e.g.
          <code>http://127.0.0.1:11434/v1</code>, not just the host.</p>
@@ -687,7 +687,7 @@ claude   # sign in with your Claude account</code></pre>
 
     <details class="faq">
       <summary>Where's my chat history and API key stored?</summary>
-      <p><code>%APPDATA%\RoForge</code>. It survives reinstalls and upgrades, and the key
+      <p><code>%APPDATA%\Bloxwright</code>. It survives reinstalls and upgrades, and the key
          is encrypted with Windows DPAPI so it's only readable by your Windows account.
          Uninstalling leaves the folder alone — delete it by hand if you want it gone.</p>
     </details>
@@ -698,7 +698,7 @@ claude   # sign in with your Claude account</code></pre>
 <footer>
   <div class="wrap">
     <p>
-      RoForge is an independent project. It is not affiliated with, endorsed by, or
+      Bloxwright is an independent project. It is not affiliated with, endorsed by, or
       connected to Roblox Corporation or Anthropic.
     </p>
     <p>
@@ -713,11 +713,11 @@ claude   # sign in with your Claude account</code></pre>
    *  and the release notes. If it's ever left empty the button renders  *
    *  disabled rather than sending people to a 404.                      *
    * ------------------------------------------------------------------ */
-  // TEMPORARY: points at the personal repo until the roforgeapp org exists,
+  // TEMPORARY: points at the personal repo until the bloxwright org exists,
   // so the button works rather than 404s. Flip both this and the source link
   // above the moment the repo is transferred.
   const DOWNLOAD_URL =
-    "https://github.com/rebecca002123/roforge/releases/download/v1.5.0/RoForge-Setup-1.5.0.exe";
+    "https://github.com/rebecca002123/bloxwright/releases/download/v1.6.0/Bloxwright-Setup-1.6.0.exe";
 
   const btn = document.getElementById("dl");
   if (DOWNLOAD_URL) {

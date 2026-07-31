@@ -1,14 +1,14 @@
 --!nonstrict
 --[[
-	RoForge — Studio bridge plugin.
+	Bloxwright — Studio bridge plugin.
 
-	Nothing can dial into Studio from outside, so this polls the RoForge desktop
+	Nothing can dial into Studio from outside, so this polls the Bloxwright desktop
 	app on localhost instead: every tick it sends a small snapshot of the open
 	place (so the assistant knows what you're actually working on) and collects
 	any scripts you asked it to insert.
 
 	Install: drop this file in your Studio Plugins folder
-	(Plugins tab -> Plugins Folder), then click the RoForge button.
+	(Plugins tab -> Plugins Folder), then click the Bloxwright button.
 ]]
 
 local HttpService = game:GetService("HttpService")
@@ -29,10 +29,10 @@ local POLL_SECONDS = 3
 -- So once work starts arriving, poll hard until the queue drains.
 local BUSY_POLL_SECONDS = 0.2
 
-local toolbar = plugin:CreateToolbar("RoForge")
+local toolbar = plugin:CreateToolbar("Bloxwright")
 local button = toolbar:CreateButton(
-	"RoForge",
-	"Connect this place to the RoForge desktop app",
+	"Bloxwright",
+	"Connect this place to the Bloxwright desktop app",
 	"rbxasset://textures/ui/common/robux.png"
 )
 button.ClickableWhenViewportHidden = true
@@ -60,7 +60,7 @@ local ROOTS = {
 }
 
 local function log(message)
-	print("[RoForge] " .. message)
+	print("[Bloxwright] " .. message)
 end
 
 local function splitPath(path: string): { string }
@@ -104,7 +104,7 @@ local function resolveTarget(path: string): (Instance?, string?, string?)
 		table.remove(parts, 1)
 		if #parts == 0 then
 			-- "path=selection" with no name: let the caller name it.
-			return root, "RoForgeScript", nil
+			return root, "BloxwrightScript", nil
 		end
 	else
 		local rootName = parts[1]
@@ -227,7 +227,7 @@ local function applyJob(job): (boolean, string)
 		return false, err or "could not resolve that path"
 	end
 
-	local recording = ChangeHistoryService:TryBeginRecording("RoForge: " .. scriptName)
+	local recording = ChangeHistoryService:TryBeginRecording("Bloxwright: " .. scriptName)
 
 	local existing = parent:FindFirstChild(scriptName)
 	local target: Instance
@@ -269,7 +269,7 @@ local function applyJob(job): (boolean, string)
 
 	if not ok then
 		-- Almost always the script-injection permission prompt being declined.
-		return false, "could not write the script source (allow RoForge script access when Studio asks): " .. tostring(setErr)
+		return false, "could not write the script source (allow Bloxwright script access when Studio asks): " .. tostring(setErr)
 	end
 
 	Selection:Set({ target })
@@ -328,7 +328,7 @@ local function applyInstance(job): (boolean, string)
 		return false, err or "could not resolve that path"
 	end
 
-	local recording = ChangeHistoryService:TryBeginRecording("RoForge: " .. name)
+	local recording = ChangeHistoryService:TryBeginRecording("Bloxwright: " .. name)
 
 	local existing = parent:FindFirstChild(name)
 	local target: Instance
@@ -374,7 +374,7 @@ local function applyPropertyJob(job): (boolean, string)
 	if not target then
 		return false, err or "not found"
 	end
-	local recording = ChangeHistoryService:TryBeginRecording("RoForge: properties")
+	local recording = ChangeHistoryService:TryBeginRecording("Bloxwright: properties")
 	local failures = applyProperties(target, job.properties)
 	if recording then
 		ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Commit)
@@ -396,7 +396,7 @@ local function applyDelete(job): (boolean, string)
 		return false, "refusing to delete the service " .. target.Name
 	end
 	local removed = instancePath(target)
-	local recording = ChangeHistoryService:TryBeginRecording("RoForge: delete " .. target.Name)
+	local recording = ChangeHistoryService:TryBeginRecording("Bloxwright: delete " .. target.Name)
 	target:Destroy()
 	if recording then
 		ChangeHistoryService:FinishRecording(recording, Enum.FinishRecordingOperation.Commit)
@@ -583,17 +583,17 @@ local function setConnected(value: boolean)
 			local reached, didWork = tick()
 			if not reached and not warned then
 				warned = true
-				log("can't reach the RoForge app — is it running? (" .. BASE_URL .. ")")
+				log("can't reach the Bloxwright app — is it running? (" .. BASE_URL .. ")")
 			elseif reached and warned then
 				warned = false
-				log("reconnected to the RoForge app")
+				log("reconnected to the Bloxwright app")
 			end
 			task.wait(didWork and BUSY_POLL_SECONDS or POLL_SECONDS)
 		end
 	end)
 end
 
-local AUTO_SETTING = "roforge_autoconnect"
+local AUTO_SETTING = "bloxwright_autoconnect"
 
 button.Click:Connect(function()
 	local wanted = not connected
@@ -620,6 +620,6 @@ if not RunService:IsRunning() then
 	if auto then
 		setConnected(true)
 	else
-		log("loaded, auto-connect is off. Click the RoForge button to connect.")
+		log("loaded, auto-connect is off. Click the Bloxwright button to connect.")
 	end
 end

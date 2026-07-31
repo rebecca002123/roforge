@@ -2,7 +2,7 @@
 
 // The third engine: any server that speaks the OpenAI chat-completions API.
 //
-// This is what makes RoForge usable by someone with no Anthropic account at
+// This is what makes Bloxwright usable by someone with no Anthropic account at
 // all. One protocol covers a lot of ground:
 //
 //   Ollama      — models running on their own PC. Free forever, no key, no
@@ -69,8 +69,8 @@ function headers(apiKey) {
   const h = { 'content-type': 'application/json' };
   if (apiKey) h.authorization = `Bearer ${apiKey}`;
   // OpenRouter attributes requests by these; harmless everywhere else.
-  h['http-referer'] = 'https://roforgeapp.github.io';
-  h['x-title'] = 'RoForge';
+  h['http-referer'] = 'https://bloxwright.github.io';
+  h['x-title'] = 'Bloxwright';
   return h;
 }
 

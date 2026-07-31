@@ -1,6 +1,6 @@
 'use strict';
 
-// An MCP server exposing RoForge's Studio tools, so the Claude Code CLI can
+// An MCP server exposing Bloxwright's Studio tools, so the Claude Code CLI can
 // build inside Roblox the same way the app's own agent loop does — and bill to
 // the user's Claude subscription instead of API credits.
 //
@@ -9,13 +9,13 @@
 // it can run under `ELECTRON_RUN_AS_NODE` inside the packaged app, with no
 // system node install to rely on.
 //
-// It holds no state: every tool call is proxied to the RoForge app's local
+// It holds no state: every tool call is proxied to the Bloxwright app's local
 // bridge, which owns the queue and the Studio connection.
 
 const readline = require('readline');
 
-const PORT = process.env.ROFORGE_PORT || '8095';
-const TOKEN = process.env.ROFORGE_TOKEN || '';
+const PORT = process.env.BLOXWRIGHT_PORT || '8095';
+const TOKEN = process.env.BLOXWRIGHT_TOKEN || '';
 const BASE = `http://127.0.0.1:${PORT}`;
 
 const PROPERTY_HELP = `Roblox datatypes are tagged objects:
@@ -114,13 +114,13 @@ async function runTool(name, input) {
   try {
     const res = await fetch(`${BASE}/job`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-roforge-token': TOKEN },
+      headers: { 'content-type': 'application/json', 'x-bloxwright-token': TOKEN },
       body: JSON.stringify(build(input || {})),
     });
-    if (!res.ok) return { ok: false, error: `RoForge rejected the job (HTTP ${res.status}).` };
+    if (!res.ok) return { ok: false, error: `Bloxwright rejected the job (HTTP ${res.status}).` };
     return await res.json();
   } catch (err) {
-    return { ok: false, error: `Could not reach the RoForge app on ${BASE}. Is it running?` };
+    return { ok: false, error: `Could not reach the Bloxwright app on ${BASE}. Is it running?` };
   }
 }
 
@@ -149,7 +149,7 @@ rl.on('line', async (line) => {
     return reply(id, {
       protocolVersion: '2024-11-05',
       capabilities: { tools: {} },
-      serverInfo: { name: 'roforge', version: '1.0.0' },
+      serverInfo: { name: 'bloxwright', version: '1.0.0' },
     });
   }
   if (method === 'tools/list') return reply(id, { tools: TOOLS });

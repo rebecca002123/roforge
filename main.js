@@ -1,6 +1,6 @@
 'use strict';
 
-// RoForge — a Roblox coding companion that sits next to Studio.
+// Bloxwright — a Roblox coding companion that sits next to Studio.
 //
 // Three moving parts: this process owns the window and the Anthropic calls,
 // src/bridge.js runs a localhost server that the Studio plugin polls, and the
@@ -19,7 +19,7 @@ const compat = require('./src/openai');
 
 let win = null;
 
-// Must match PLUGIN_VERSION in plugin/RoForge.server.lua. Studio caches plugins
+// Must match PLUGIN_VERSION in plugin/Bloxwright.server.lua. Studio caches plugins
 // until it reloads them, so an updated app can easily be talking to last
 // version's plugin — better to say so than to fail a build halfway through.
 const PLUGIN_PROTOCOL = 2;
@@ -57,7 +57,7 @@ function createWindow() {
     backgroundColor: '#0b0d13',
     backgroundMaterial: 'acrylic', // Win11 glass; ignored elsewhere
     show: false,
-    title: 'RoForge',
+    title: 'Bloxwright',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -88,7 +88,7 @@ function pushToRenderer(channel, payload) {
 app.whenReady().then(async () => {
   const s = store.settings();
   const started = await bridge.start(s.bridgePort);
-  if (!started.ok) console.error('[roforge] bridge failed to start:', started.error);
+  if (!started.ok) console.error('[bloxwright] bridge failed to start:', started.error);
 
   bridge.emitter.on('status', async () => pushToRenderer('studio:status', await studioState()));
   bridge.emitter.on('result', (r) => pushToRenderer('studio:result', r));
@@ -98,15 +98,16 @@ app.whenReady().then(async () => {
   try {
     claudecode.writeMcpConfig(__dirname, process.execPath);
   } catch (err) {
-    console.error('[roforge] could not write the MCP config', err);
+    console.error('[bloxwright] could not write the MCP config', err);
   }
 
+  removeLegacyPlugins();
   refreshInstalledPlugin();
 
   createWindow();
 
   // Summon the window without reaching for the taskbar mid-build.
-  globalShortcut.register('Control+Alt+R', () => {
+  globalShortcut.register('Control+Alt+B', () => {
     if (!win) return createWindow();
     if (win.isVisible() && win.isFocused()) win.hide();
     else { win.show(); win.focus(); }
@@ -205,14 +206,14 @@ ipcMain.handle('chat:send', async (event, { conversationId, text, buildMode }) =
   if (buildMode && studio.connected && (studio.pluginVersion || 1) < PLUGIN_PROTOCOL) {
     return {
       ok: false,
-      error: 'Roblox Studio is still running an older RoForge plugin that cannot build for you. '
+      error: 'Roblox Studio is still running an older Bloxwright plugin that cannot build for you. '
         + 'Restart Studio to load the current one, then try again.',
     };
   }
   if (buildMode && !bridge.isConnected()) {
     return {
       ok: false,
-      error: 'Build mode needs Roblox Studio connected — open Studio with the RoForge plugin, or switch Build off to just chat.',
+      error: 'Build mode needs Roblox Studio connected — open Studio with the Bloxwright plugin, or switch Build off to just chat.',
     };
   }
 
@@ -318,8 +319,27 @@ function studioPluginsDir() {
   return path.join(local, 'Roblox', 'Plugins');
 }
 
-const PLUGIN_FILE = 'RoForge.server.lua';
+const PLUGIN_FILE = 'Bloxwright.server.lua';
+/** What this app was called before. Its plugin polls the same port, so leaving
+ *  one behind means two plugins racing for the same jobs — half the inserts
+ *  would vanish into a Studio window that isn't the one you're looking at. */
+const LEGACY_PLUGIN_FILES = ['RoForge.server.lua'];
 const bundledPlugin = () => path.join(__dirname, 'plugin', PLUGIN_FILE);
+
+/** Remove plugins this app installed under a previous name. Ours to clean up;
+ *  anything we didn't put there is left alone. */
+function removeLegacyPlugins() {
+  for (const name of LEGACY_PLUGIN_FILES) {
+    const stale = path.join(studioPluginsDir(), name);
+    try {
+      if (!fs.existsSync(stale)) continue;
+      fs.unlinkSync(stale);
+      console.log(`[bloxwright] removed the old ${name} — restart Studio to unload it`);
+    } catch (err) {
+      console.error(`[bloxwright] could not remove ${name}`, err);
+    }
+  }
+}
 
 /**
  * Keep an already-installed plugin in step with the app. Only ever *updates* a
@@ -333,9 +353,9 @@ function refreshInstalledPlugin() {
     const bundled = fs.readFileSync(bundledPlugin());
     if (fs.readFileSync(dest).equals(bundled)) return;
     fs.writeFileSync(dest, bundled);
-    console.log('[roforge] updated the installed Studio plugin — restart Studio to load it');
+    console.log('[bloxwright] updated the installed Studio plugin — restart Studio to load it');
   } catch (err) {
-    console.error('[roforge] could not refresh the Studio plugin', err);
+    console.error('[bloxwright] could not refresh the Studio plugin', err);
   }
 }
 
@@ -352,6 +372,7 @@ ipcMain.handle('studio:install-plugin', () => {
     const contents = fs.readFileSync(source);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(dest, contents);
+    removeLegacyPlugins();
     return { ok: true, path: dest };
   } catch (err) {
     return { ok: false, error: String((err && err.message) || err), path: dest };

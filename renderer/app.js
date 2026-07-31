@@ -56,7 +56,7 @@ function emptyState() {
 function messageNode(role, html) {
   const wrap = document.createElement('div');
   wrap.className = `msg ${role}`;
-  wrap.innerHTML = `<div class="role">${role === 'user' ? 'You' : 'RoForge'}</div>`
+  wrap.innerHTML = `<div class="role">${role === 'user' ? 'You' : 'Bloxwright'}</div>`
     + `<div class="bubble">${html}</div>`;
   return wrap;
 }
@@ -286,14 +286,14 @@ function paintBuildToggle() {
   btn.classList.toggle('on', state.buildMode && connected);
   btn.disabled = !connected;
   if (state.studio && state.studio.pluginStale) {
-    btn.title = 'Restart Roblox Studio — it is running an older RoForge plugin that cannot build.';
+    btn.title = 'Restart Roblox Studio — it is running an older Bloxwright plugin that cannot build.';
     btn.classList.remove('on');
     return;
   }
   btn.title = connected
     ? (state.buildMode
-      ? 'On — RoForge will create scripts and objects in your place itself.'
-      : 'Off — RoForge will answer in chat and let you insert code yourself.')
+      ? 'On — Bloxwright will create scripts and objects in your place itself.'
+      : 'Off — Bloxwright will answer in chat and let you insert code yourself.')
     : 'Needs Roblox Studio connected.';
   if (!connected && state.buildMode) {
     // Don't leave it looking armed when it can't fire.
@@ -317,7 +317,7 @@ function paintStudio(st) {
 
   if (st.connected && st.pluginStale) {
     $('studioLabel').textContent = 'Studio · plugin outdated';
-    chip.title = 'Studio is running an older copy of the RoForge plugin. '
+    chip.title = 'Studio is running an older copy of the Bloxwright plugin. '
       + 'Restart Studio to pick up the current one — building needs it.';
   } else if (st.connected) {
     $('studioLabel').textContent = st.place ? `Studio · ${st.place}` : 'Studio connected';
@@ -325,11 +325,11 @@ function paintStudio(st) {
       + (st.selection && st.selection.length ? ` · ${st.selection.length} selected in the Explorer` : '');
   } else if (st.studioRunning) {
     $('studioLabel').textContent = 'Studio open · not linked';
-    chip.title = 'Roblox Studio is running but the RoForge plugin isn\'t talking to it yet.\n'
+    chip.title = 'Roblox Studio is running but the Bloxwright plugin isn\'t talking to it yet.\n'
       + 'Install the plugin in Settings, then restart Studio — plugins only load at startup.';
   } else {
     $('studioLabel').textContent = 'Studio closed';
-    chip.title = 'Roblox Studio isn\'t running. Open it and RoForge will link up automatically.';
+    chip.title = 'Roblox Studio isn\'t running. Open it and Bloxwright will link up automatically.';
   }
   paintBuildToggle();
 }
@@ -363,7 +363,7 @@ let providers = null; // filled once from the main process
 const ENGINE_HELP = {
   'claude-code': 'Uses the Claude Code CLI already on this PC, so it draws on your Claude subscription instead of API credits. Studio tools reach it over MCP.',
   api: 'Calls the Anthropic API directly. Billed as pay-as-you-go credits, which a Claude subscription does not cover.',
-  openai: 'For anyone without a Claude account. Point RoForge at a model running on this PC (free, offline) or at a hosted provider with a free tier.',
+  openai: 'For anyone without a Claude account. Point Bloxwright at a model running on this PC (free, offline) or at a hosted provider with a free tier.',
 };
 
 function paintEngine(engine) {
@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     st.className = '';
     const res = await window.forge.installPlugin();
     if (res.ok) {
-      st.textContent = `Installed to ${res.path}. Restart Studio, then click RoForge on the Plugins tab.`;
+      st.textContent = `Installed to ${res.path}. Restart Studio, then click Bloxwright on the Plugins tab.`;
       st.className = 'state-ok';
       toast('Plugin installed — restart Studio');
     } else {

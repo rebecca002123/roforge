@@ -1,4 +1,4 @@
-# RoForge
+# Bloxwright
 
 A Roblox coding companion for Windows. It's a chat window you talk to the same
 way you'd talk to Claude — except it only ever thinks about Roblox, and it can
@@ -11,7 +11,7 @@ desktop shortcut. No terminal involved.
 
 Three options, in Settings under **Runs on**:
 
-- **Your Claude subscription** (default) — RoForge drives the Claude Code CLI
+- **Your Claude subscription** (default) — Bloxwright drives the Claude Code CLI
   already installed on this PC, so there are no per-token API charges. The
   Studio tools reach it through an MCP server (`mcp/server.js`) that proxies to
   the app's local bridge, so build mode works exactly the same way.
@@ -20,7 +20,7 @@ Three options, in Settings under **Runs on**:
   it's a separate balance at console.anthropic.com. The key is encrypted with
   Windows DPAPI and never leaves the machine except in requests to Anthropic.
 - **Any other model** — anything speaking the OpenAI chat-completions API
-  (`src/openai.js`), which is what makes RoForge usable with no Anthropic
+  (`src/openai.js`), which is what makes Bloxwright usable with no Anthropic
   account at all. Presets for **Ollama** (models on your own PC: free, offline,
   no key), **OpenRouter**, **Groq** and **Google Gemini** (all with free
   tiers), plus a custom address for LM Studio, llama.cpp, vLLM or a company
@@ -38,13 +38,13 @@ or two and then lose the thread. Ordinary chat is fine on anything.
 
 ```
 npm install
-npm run dist     # builds dist/RoForge-Setup-<version>.exe
+npm run dist     # builds dist/Bloxwright-Setup-<version>.exe
 ```
 
-Run that installer and RoForge lands in
-`%LOCALAPPDATA%\Programs\RoForge` with desktop and Start Menu shortcuts, plus
+Run that installer and Bloxwright lands in
+`%LOCALAPPDATA%\Programs\Bloxwright` with desktop and Start Menu shortcuts, plus
 an entry in Add or Remove Programs. It's a per-user install, so it never asks
-for admin. Your key and chat history live in `%APPDATA%\RoForge` and survive
+for admin. Your key and chat history live in `%APPDATA%\Bloxwright` and survive
 reinstalls and upgrades.
 
 `npm start` still runs it straight from source when you're changing the code.
@@ -96,14 +96,14 @@ where you insert code yourself.
   (`ServerScriptService/CoinService`, `ModuleScript`). One click inserts it,
   as a single undoable action.
 
-Press `Ctrl+Alt+R` anywhere to show or hide the window. It opens down the
+Press `Ctrl+Alt+B` anywhere to show or hide the window. It opens down the
 right-hand side of the screen, sized to sit beside Studio rather than over it.
 
 ## Connecting Roblox Studio
 
 1. Settings → **Install plugin into Roblox Studio**. It copies the plugin into
    `%LOCALAPPDATA%\Roblox\Plugins` for you.
-2. Restart Studio, then click the **RoForge** button on the Plugins tab.
+2. Restart Studio, then click the **Bloxwright** button on the Plugins tab.
 
 The chip in the title bar turns green and shows your place name.
 

@@ -1,14 +1,14 @@
 'use strict';
 
 // The system prompt is the whole product. Everything else here is plumbing to
-// get text to and from Claude; this file is what makes RoForge a *Roblox*
+// get text to and from Claude; this file is what makes Bloxwright a *Roblox*
 // assistant rather than a generic chat window.
 //
 // It is deliberately static: it sits in front of the cached prefix, so any
 // per-request interpolation here would invalidate prompt caching for every
 // turn. Live Studio context is appended as a separate, cheap trailing block.
 
-const CORE = `You are RoForge, an expert Roblox engineer embedded in a desktop app that sits
+const CORE = `You are Bloxwright, an expert Roblox engineer embedded in a desktop app that sits
 beside the user's open Roblox Studio session. You talk like a senior dev
 pairing with them — direct, concrete, no filler.
 
