@@ -6,18 +6,104 @@
 // src/bridge.js runs a localhost server that the Studio plugin polls, and the
 // renderer is a plain HTML/CSS/JS chat UI.
 
-const { app, BrowserWindow, ipcMain, globalShortcut, shell, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, shell, screen, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 const store = require('./src/store');
 const claude = require('./src/claude');
 const bridge = require('./src/bridge');
 const studioDetect = require('./src/studio-detect');
 const claudecode = require('./src/claudecode');
+const setup = require('./src/setup');
 const compat = require('./src/openai');
 
 let win = null;
+
+// --- startup diagnostics -------------------------------------------------
+//
+// This app gets handed to other people as an .exe, and a packaged Electron app
+// that fails before its window exists fails *invisibly*: no terminal, no error
+// dialog, just a process in Task Manager or nothing at all. "It doesn't open"
+// is then unreportable and undebuggable. Everything in this section exists so
+// that every startup failure leaves either a visible message or a log file the
+// user can send back.
+
+const LOG_FILE = path.join(app.getPath('userData'), 'startup.log');
+/** Written after a GPU crash so the next launch skips hardware acceleration. */
+const SAFE_MODE_FILE = path.join(app.getPath('userData'), 'safe-mode');
+
+function logLine(message) {
+  const line = `[${new Date().toISOString()}] ${message}\n`;
+  try {
+    fs.mkdirSync(path.dirname(LOG_FILE), { recursive: true });
+    fs.appendFileSync(LOG_FILE, line);
+  } catch { /* the log is a convenience, never a reason to fail */ }
+  console.log(line.trim());
+}
+
+/** A failure the user has to be told about — they can't see the console. */
+function fatal(stage, err) {
+  const detail = (err && err.stack) || String(err);
+  logLine(`FATAL during ${stage}: ${detail}`);
+  try {
+    dialog.showErrorBox(
+      'Bloxwright could not start',
+      `Something failed while starting up (${stage}).\n\n${detail}\n\n`
+      + `A log was written to:\n${LOG_FILE}\n\nSend that file over and it can be fixed.`,
+    );
+  } catch { /* pre-ready, or no display — the log still has it */ }
+}
+
+// Nothing below the window creation is allowed to take the app down silently.
+process.on('uncaughtException', (err) => fatal('an unexpected error', err));
+process.on('unhandledRejection', (err) => logLine(`unhandled rejection: ${(err && err.stack) || err}`));
+
+// Hardware acceleration must be turned off before the app is ready, so the
+// decision is made from a marker file left by a previous crashed launch.
+const safeMode = process.argv.includes('--safe') || fs.existsSync(SAFE_MODE_FILE);
+if (safeMode) {
+  app.disableHardwareAcceleration();
+  logLine('starting in safe mode (hardware acceleration disabled)');
+}
+
+logLine(`launch: v${app.getVersion()} electron ${process.versions.electron} on ${os.platform()} ${os.release()}`);
+
+/** Set once the window has actually been on screen, and once we're shutting
+ *  down: a process being torn down reports its renderer as "crashed" too, and
+ *  neither of those is the failure this recovery is for. */
+let windowEverShown = false;
+let quitting = false;
+app.on('before-quit', () => { quitting = true; });
+
+/**
+ * A GPU process that dies takes the window with it and leaves the app running
+ * with nothing on screen — the exact "it installed but never opens" report.
+ * Restart once without hardware acceleration rather than sitting there blank.
+ */
+function recoverWithSafeMode(reason) {
+  if (quitting) return;
+  if (windowEverShown) {
+    // The app opened fine, so hardware acceleration is not the problem and
+    // relaunching would only throw away whatever the user was in the middle of.
+    logLine(`${reason}, but the app had already opened — not relaunching`);
+    return;
+  }
+  if (safeMode) { // already tried; a second relaunch would just loop
+    fatal('rendering', new Error(`${reason} even with hardware acceleration disabled`));
+    return;
+  }
+  logLine(`${reason} — relaunching in safe mode`);
+  try { fs.writeFileSync(SAFE_MODE_FILE, `${new Date().toISOString()} ${reason}\n`); } catch { /* best effort */ }
+  app.relaunch();
+  app.exit(0);
+}
+
+app.on('child-process-gone', (_e, details) => {
+  logLine(`child process gone: ${details.type} (${details.reason})`);
+  if (details.type === 'GPU' && details.reason !== 'clean-exit') recoverWithSafeMode('the GPU process crashed');
+});
 
 // Must match PLUGIN_VERSION in plugin/Bloxwright.server.lua. Studio caches plugins
 // until it reloads them, so an updated app can easily be talking to last
@@ -66,10 +152,33 @@ function createWindow() {
     },
   });
 
-  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-  win.once('ready-to-show', () => {
+  win.loadFile(path.join(__dirname, 'renderer', 'index.html'))
+    .catch((err) => fatal('loading the interface', err));
+
+  // `show: false` avoids a flash of empty window, but it means a renderer that
+  // never becomes ready leaves a running app with nothing on screen. Show it
+  // either way — a half-painted window is still something the user can act on,
+  // and it is infinitely better than an invisible one.
+  let shown = false;
+  const reveal = (why) => {
+    if (shown || !win || win.isDestroyed()) return;
+    shown = true;
+    windowEverShown = true;
+    logLine(`showing the window (${why})`);
     win.show();
     if (store.settings().alwaysOnTop) win.setAlwaysOnTop(true);
+  };
+  win.once('ready-to-show', () => reveal('ready-to-show'));
+  setTimeout(() => reveal('fallback timer — the renderer never reported ready'), 5000);
+
+  win.webContents.on('did-fail-load', (_e, code, description) => {
+    logLine(`the interface failed to load: ${description} (${code})`);
+    reveal('load failed');
+  });
+
+  win.webContents.on('render-process-gone', (_e, details) => {
+    logLine(`render process gone: ${details.reason}`);
+    if (details.reason === 'crashed' || details.reason === 'oom') recoverWithSafeMode('the window crashed');
   });
 
   // External links open in the real browser, never inside the app shell.
@@ -85,37 +194,64 @@ function pushToRenderer(channel, payload) {
   if (win && !win.isDestroyed()) win.webContents.send(channel, payload);
 }
 
+/** Run a startup step that must never be able to stop the window appearing. */
+function step(name, fn) {
+  try {
+    return fn();
+  } catch (err) {
+    logLine(`startup step "${name}" failed: ${(err && err.stack) || err}`);
+    return null;
+  }
+}
+
 app.whenReady().then(async () => {
-  const s = store.settings();
-  const started = await bridge.start(s.bridgePort);
-  if (!started.ok) console.error('[bloxwright] bridge failed to start:', started.error);
+  // The window comes first. Everything after it is optional groundwork — the
+  // Studio bridge, the plugin, the MCP config — and none of it is a reason for
+  // the user to be left staring at a taskbar icon that does nothing.
+  try {
+    createWindow();
+  } catch (err) {
+    fatal('opening the window', err);
+    return;
+  }
+
+  const s = step('read settings', () => store.settings()) || {};
+
+  const started = await bridge.start(s.bridgePort).catch((err) => ({ ok: false, error: String(err) }));
+  if (!started.ok) logLine(`the Studio bridge failed to start: ${started.error}`);
 
   bridge.emitter.on('status', async () => pushToRenderer('studio:status', await studioState()));
   bridge.emitter.on('result', (r) => pushToRenderer('studio:result', r));
 
   // Written at startup, not just per turn, so the config is always on disk for
   // inspection and so a manual `claude --mcp-config` run works too.
-  try {
-    claudecode.writeMcpConfig(__dirname, process.execPath);
-  } catch (err) {
-    console.error('[bloxwright] could not write the MCP config', err);
-  }
+  step('write the MCP config', () => claudecode.writeMcpConfig(__dirname, process.execPath));
 
-  removeLegacyPlugins();
-  refreshInstalledPlugin();
+  step('remove legacy plugins', removeLegacyPlugins);
+  step('refresh the Studio plugin', refreshInstalledPlugin);
 
-  createWindow();
-
-  // Summon the window without reaching for the taskbar mid-build.
-  globalShortcut.register('Control+Alt+B', () => {
-    if (!win) return createWindow();
-    if (win.isVisible() && win.isFocused()) win.hide();
-    else { win.show(); win.focus(); }
+  // Summon the window without reaching for the taskbar mid-build. Another app
+  // may already own this combination, which is not worth failing over.
+  step('register the shortcut', () => {
+    const ok = globalShortcut.register('Control+Alt+B', () => {
+      if (!win) return createWindow();
+      if (win.isVisible() && win.isFocused()) win.hide();
+      else { win.show(); win.focus(); }
+    });
+    if (!ok) logLine('Ctrl+Alt+B is taken by another app — the shortcut is unavailable');
   });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+
+  // The safe-mode marker deliberately stays put once set. Clearing it here
+  // would mean a machine whose GPU crashes every launch does the crash-and-
+  // relaunch dance forever; software rendering is a little slower and always
+  // opens. Delete the file to try the GPU again.
+  if (safeMode) logLine(`still in safe mode — delete ${SAFE_MODE_FILE} to re-enable the GPU`);
+
+  logLine('startup complete');
 });
 
 app.on('window-all-closed', () => {
@@ -150,6 +286,25 @@ ipcMain.handle('settings:set-key', async (_e, key) => {
   const check = await claude.verifyKey(trimmed);
   if (check.ok) store.setApiKey(trimmed);
   return check;
+});
+
+// --- first-run setup ------------------------------------------------------
+
+ipcMain.handle('setup:status', () => setup.status());
+
+ipcMain.handle('setup:install', async () => {
+  const res = await setup.installClaudeCode((line) => pushToRenderer('setup:progress', line));
+  return { ...res, status: setup.status() };
+});
+
+ipcMain.handle('setup:login', () => {
+  const res = setup.startLogin();
+  return { ...res, status: setup.status() };
+});
+
+ipcMain.handle('setup:open-docs', () => {
+  shell.openExternal(setup.INSTALL_DOCS);
+  return { ok: true };
 });
 
 // --- OpenAI-compatible engine -------------------------------------------
@@ -189,8 +344,13 @@ ipcMain.handle('chat:send', async (event, { conversationId, text, buildMode }) =
   const engine = settings.engine;
   const apiKey = store.getApiKey();
 
-  if (engine === 'claude-code' && !claudecode.isInstalled()) {
-    return { ok: false, error: 'Claude Code is not installed on this machine. Install it, or pick a different engine in settings.' };
+  // Both halves matter and they fail differently: no CLI is something the app
+  // can fix in a click, no login is something only the user can do. Answering
+  // with a code rather than a sentence lets the renderer open the right one.
+  if (engine === 'claude-code') {
+    const st = setup.status();
+    if (!st.installed) return { ok: false, error: 'needs-setup', stage: 'install' };
+    if (!st.loggedIn) return { ok: false, error: 'needs-setup', stage: 'login' };
   }
   if (engine === 'api' && !apiKey) return { ok: false, error: 'no-key' };
   if (engine === 'openai') {

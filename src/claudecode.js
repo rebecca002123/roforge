@@ -41,12 +41,59 @@ function findCli() {
   for (const candidate of candidates) {
     if (fs.existsSync(candidate.command)) return candidate;
   }
+  const onPath = resolveOnPath();
+  if (onPath) return onPath;
   return { command: 'claude', shell: false }; // let PATH resolve it
 }
 
+/**
+ * Find the CLI on PATH ourselves rather than leaving it to spawn.
+ *
+ * Handing spawn a bare `claude` looks like it should work and mostly doesn't:
+ * with `shell: false` Windows resolves only `.exe`, so an npm install under a
+ * prefix we don't know about — nvm, Volta, a custom `npm config set prefix` —
+ * leaves a `claude.cmd` that spawn reports as ENOENT. Worse, that shim is the
+ * one thing we can't afford to run through cmd.exe (see findCli), so when we
+ * do find one, hop to the native binary npm unpacked beside it.
+ */
+function resolveOnPath() {
+  if (process.platform !== 'win32') {
+    for (const dir of pathDirs()) {
+      const file = path.join(dir, 'claude');
+      if (fs.existsSync(file)) return { command: file, shell: false };
+    }
+    return null;
+  }
+  let shim = null;
+  for (const dir of pathDirs()) {
+    const native = path.join(dir, 'claude.exe');
+    if (fs.existsSync(native)) return { command: native, shell: false };
+    for (const name of ['claude.cmd', 'claude.bat']) {
+      const file = path.join(dir, name);
+      if (!shim && fs.existsSync(file)) shim = file;
+    }
+  }
+  if (!shim) return null;
+  const beside = path.join(path.dirname(shim), 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe');
+  if (fs.existsSync(beside)) return { command: beside, shell: false };
+  return { command: shim, shell: true };
+}
+
+function pathDirs() {
+  return String(process.env.PATH || '').split(path.delimiter).filter(Boolean);
+}
+
+/**
+ * Whether the CLI is actually here. The PATH fallback used to be treated as
+ * "installed", which meant a machine without Claude Code sailed past the
+ * friendly check in main.js and got `spawn claude ENOENT` instead — so the one
+ * case this exists to catch was the one case it missed. When the answer rests
+ * on PATH, go and look.
+ */
 function isInstalled() {
   const cli = findCli();
-  return cli.command === 'claude' ? true : fs.existsSync(cli.command);
+  // Anything but the bare-name fallback means we put eyes on an actual file.
+  return cli.command !== 'claude' && fs.existsSync(cli.command);
 }
 
 /**

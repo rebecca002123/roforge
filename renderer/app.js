@@ -262,6 +262,14 @@ async function sendMessage() {
     finishLive(res.text || state.streamText,
       res.stopReason === 'aborted' ? { text: 'Stopped — here\'s what came through.' } : null);
     refreshChatList();
+  } else if (res.error === 'needs-setup') {
+    finishLive('', {
+      text: res.stage === 'install'
+        ? 'Claude Code isn\'t on this PC yet.'
+        : 'You\'re not signed in to Claude yet.',
+      error: true,
+    });
+    openSetup();
   } else if (res.error === 'no-key') {
     finishLive('', { text: 'No API key set.', error: true });
     openSettings();
@@ -417,6 +425,148 @@ async function insertAsset() {
   } finally {
     btn.disabled = false;
   }
+}
+
+// --- first-run setup -----------------------------------------------------
+
+let setupPoll = null;
+
+function paintSetup(st) {
+  const login = $('stepLogin');
+  login.classList.toggle('done', st.loggedIn);
+  login.querySelector('.setup-tick').hidden = !st.loggedIn;
+
+  // Don't offer a "Sign in" button on a PC with nothing to sign into — say
+  // what the press will actually do. Polling relabels this the moment Claude
+  // Code appears, so installing in the background is enough to move it on.
+  const button = $('btnLoginCC');
+  const state = $('loginState');
+  if (!st.installed) {
+    button.textContent = 'Install Claude Code';
+    $('loginHint').innerHTML = 'Claude Code holds the login, so it has to be on this '
+      + 'PC first. There\'s no installer to download — pressing this fetches it with '
+      + 'winget, about a minute. By hand it\'s '
+      + '<code>winget install Anthropic.ClaudeCode</code> in PowerShell.';
+  } else {
+    button.textContent = 'Sign in to Claude';
+    $('loginHint').textContent = 'Opens your browser. Approve it there, then come back — this window notices on its own.';
+    // An install that failed here but succeeded elsewhere shouldn't leave a red
+    // line sitting under a button that now works.
+    if (state.className === 'state-bad') {
+      state.textContent = 'Claude Code found. Press Sign in.';
+      state.className = 'state-ok';
+    }
+  }
+
+  if (st.ready) {
+    // Name the account: this whole card exists because "which Claude is it
+    // using?" is the question people actually have.
+    state.textContent = st.account
+      ? `Signed in as ${st.account}${st.plan ? ` · ${st.plan}` : ''}. Ready to build.`
+      : 'Signed in. You\'re ready to build.';
+    state.className = 'state-ok';
+  }
+  return st;
+}
+
+async function refreshSetup() {
+  return paintSetup(await window.forge.setupStatus());
+}
+
+/**
+ * Poll while a step is finishing outside the app — the login happens in a
+ * terminal and a browser, so nothing here will fire an event when it lands.
+ */
+function watchSetup() {
+  if (setupPoll) return;
+  setupPoll = setInterval(async () => {
+    const st = await refreshSetup();
+    if (st.ready) stopWatchingSetup();
+  }, 2000);
+}
+
+function stopWatchingSetup() {
+  if (setupPoll) { clearInterval(setupPoll); setupPoll = null; }
+}
+
+async function openSetup() {
+  $('loginState').textContent = '';
+  $('loginState').className = '';
+  await refreshSetup();
+  $('setupModal').hidden = false;
+}
+
+function closeSetup() {
+  stopWatchingSetup();
+  $('setupModal').hidden = true;
+}
+
+/**
+ * One button, two jobs — because from the user's side it's one intention.
+ * With no CLI on the PC the press installs it; with a CLI it signs in. There's
+ * no downloadable installer to send anyone to (Anthropic ships this as a
+ * command), so pressing has to *be* the install.
+ */
+async function setupPressed() {
+  const st = await window.forge.setupStatus();
+  if (st.installed) return loginToClaude();
+  return getClaudeCode();
+}
+
+async function getClaudeCode() {
+  const button = $('btnLoginCC');
+  const state = $('loginState');
+  button.disabled = true;
+  state.className = '';
+  state.textContent = 'Installing Claude Code…';
+
+  const res = await window.forge.installClaudeCode();
+  button.disabled = false;
+
+  if (res.ok) {
+    paintSetup(res.status);
+    state.className = 'state-ok';
+    state.textContent = 'Installed. Now press Sign in.';
+    return;
+  }
+
+  state.className = 'state-bad';
+  if (res.error === 'no-winget') {
+    state.textContent = 'This PC has no winget, so it needs installing by hand — opening the instructions.';
+    window.forge.openClaudeCodeDocs();
+  } else {
+    state.textContent = 'That didn\'t take. Opening the install instructions instead.';
+    window.forge.openClaudeCodeDocs();
+  }
+  watchSetup();
+}
+
+async function loginToClaude() {
+  const state = $('loginState');
+  const res = await window.forge.startLogin();
+
+  if (res.ok) {
+    state.className = '';
+    state.textContent = 'Approve it in the browser, then come back here.';
+    watchSetup();
+    return;
+  }
+
+  // The one thing a sign-in button genuinely can't do for you: the CLI holds
+  // the credentials, so if it isn't on this PC there's nothing to sign into.
+  // Hand over the install page rather than pulling 100MB down behind a button
+  // that promised a login — then keep watching, so finishing the install in
+  // another window is all it takes to move this on.
+  if (res.error === 'needs-cli') {
+    state.className = '';
+    state.textContent = 'Opening the install page — come back when it\'s done.';
+    window.forge.openClaudeCodeDocs();
+    watchSetup();
+    return;
+  }
+
+  state.className = 'state-bad';
+  state.textContent = res.error;
 }
 
 // --- settings ------------------------------------------------------------
@@ -578,6 +728,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('btnSettings').onclick = openSettings;
   $('btnSaveSettings').onclick = saveSettings;
   $('engine').onchange = () => paintEngine($('engine').value);
+
+  $('btnLoginCC').onclick = setupPressed;
+  $('btnSetupDone').onclick = closeSetup;
+  $('btnSetupOther').onclick = () => { closeSetup(); openSettings(); };
+  window.forge.onSetupProgress((line) => {
+    const state = $('loginState');
+    if (!state.classList.contains('state-bad')) state.textContent = line;
+  });
   $('btnAsset').onclick = () => {
     const bar = $('assetBar');
     bar.hidden = !bar.hidden;
@@ -625,6 +783,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   $('settingsModal').addEventListener('click', (e) => {
     if (e.target.id === 'settingsModal') $('settingsModal').hidden = true;
+  });
+  $('setupModal').addEventListener('click', (e) => {
+    if (e.target.id === 'setupModal') closeSetup();
   });
 
   const input = $('input');
@@ -685,6 +846,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (chats.length) openChat(chats[0].id);
   else newChat();
 
-  if (whatsMissing(settings)) openSettings();
+  // A fresh install lands on the claude-code engine, so the very first launch
+  // on someone else's PC opens the setup card rather than an empty chat that
+  // only explains itself once they've typed something.
+  if (settings.engine === 'claude-code') {
+    const st = await window.forge.setupStatus();
+    if (!st.ready) openSetup();
+  } else if (whatsMissing(settings)) {
+    openSettings();
+  }
   $('input').focus();
 });

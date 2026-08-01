@@ -13,6 +13,13 @@ contextBridge.exposeInMainWorld('forge', {
   updateSettings: (patch) => ipcRenderer.invoke('settings:update', patch),
   setApiKey: (key) => ipcRenderer.invoke('settings:set-key', key),
 
+  // first-run setup for the Claude Code engine
+  setupStatus: () => ipcRenderer.invoke('setup:status'),
+  installClaudeCode: () => ipcRenderer.invoke('setup:install'),
+  onSetupProgress: (fn) => ipcRenderer.on('setup:progress', (_e, line) => fn(line)),
+  startLogin: () => ipcRenderer.invoke('setup:login'),
+  openClaudeCodeDocs: () => ipcRenderer.invoke('setup:open-docs'),
+
   // the OpenAI-compatible engine (Ollama, OpenRouter, Groq, …)
   providers: () => ipcRenderer.invoke('compat:providers'),
   setAltKey: (key) => ipcRenderer.invoke('settings:set-alt-key', key),

@@ -1,6 +1,6 @@
 {
   "name": "bloxwright",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "A liquid-glass Roblox coding companion for Windows: chat with Claude about Luau and push scripts straight into Roblox Studio",
   "main": "main.js",
   "type": "commonjs",

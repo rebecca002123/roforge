@@ -64,6 +64,32 @@
     </div>
   </footer>
 
+  <div class="modal" id="setupModal" hidden>
+    <div class="sheet">
+      <h2>Sign in to start building</h2>
+      <p class="setup-lede">Bloxwright runs on Claude. Sign in once and it
+        remembers — no keys, no settings to fill in.</p>
+
+      <div class="setup-step" id="stepLogin">
+        <div class="setup-row">
+          <div>
+            <b>Sign in to Claude</b>
+            <small id="loginHint">Opens your browser. Approve it there, then come
+              back — this window notices on its own.</small>
+          </div>
+          <span class="setup-tick" hidden>✓</span>
+        </div>
+        <button class="pill wide" id="btnLoginCC">Sign in to Claude</button>
+        <small id="loginState"></small>
+      </div>
+
+      <div class="sheet-actions setup-actions">
+        <button class="pill subtle" id="btnSetupOther">No Claude account — use a free local model</button>
+        <button class="pill" id="btnSetupDone">Done</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="settingsModal" hidden>
     <div class="sheet">
       <h2>Settings</h2>
